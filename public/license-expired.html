@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lisans Süresi Doldu — Webyaz Restaurant</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg-primary); font-family:'Inter',sans-serif; }
+    .expired-card { background:var(--bg-secondary); border:1px solid var(--border-primary); border-radius:20px; padding:48px; max-width:480px; text-align:center; }
+    .expired-icon { font-size:4rem; margin-bottom:16px; }
+    .expired-title { font-size:1.5rem; font-weight:800; color:#ef4444; margin-bottom:8px; }
+    .expired-text { color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin-bottom:24px; }
+    .expired-key { background:var(--bg-primary); border-radius:8px; padding:12px; font-family:monospace; font-size:0.85rem; color:var(--primary); margin-bottom:24px; }
+    .expired-info { display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
+    .expired-info div { display:flex; justify-content:space-between; font-size:0.8rem; padding:8px 12px; background:var(--bg-primary); border-radius:8px; }
+    .expired-info div span:first-child { color:var(--text-muted); }
+    .expired-contact { background:linear-gradient(135deg, var(--primary), #ea580c); color:#fff; padding:14px 32px; border-radius:12px; text-decoration:none; font-weight:700; font-size:0.95rem; display:inline-block; transition:0.2s; }
+    .expired-contact:hover { filter:brightness(1.1); transform:translateY(-1px); }
+  </style>
+</head>
+<body>
+  <div class="expired-card">
+    <div class="expired-icon">⏰</div>
+    <h1 class="expired-title">Lisans Süresi Doldu</h1>
+    <p class="expired-text">
+      Yazılım lisansınızın süresi dolmuştur.<br>
+      Sistemi kullanmaya devam etmek için lisansınızı yenileyin.
+    </p>
+    <div class="expired-key" id="expired-key"></div>
+    <div class="expired-info" id="expired-info"></div>
+    <a href="https://webyaz.com.tr" target="_blank" class="expired-contact">
+      📞 Lisans Yenileme — webyaz.com.tr
+    </a>
+  </div>
+
+  <script>
+    (async () => {
+      try {
+        const res = await fetch('/api/license/status');
+        const data = await res.json();
+        document.getElementById('expired-key').textContent = data.license_key || '—';
+        const info = document.getElementById('expired-info');
+        if (data.client_name) info.innerHTML += `<div><span>Müşteri</span><span>${data.client_name}</span></div>`;
+        if (data.expires_at) info.innerHTML += `<div><span>Bitiş Tarihi</span><span>${new Date(data.expires_at).toLocaleDateString('tr-TR')}</span></div>`;
+        if (data.status) info.innerHTML += `<div><span>Durum</span><span style="color:#ef4444;font-weight:700">${data.status === 'expired' ? 'Süresi Dolmuş' : data.status === 'revoked' ? 'İptal Edilmiş' : data.status}</span></div>`;
+      } catch(e) {}
+    })();
+  </script>
+</body>
+</html>

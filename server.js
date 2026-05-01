@@ -10,6 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const PORT = process.env.PORT || 3000;
 const VIEWS = path.join(__dirname, 'views');
+const LICENSE_SERVER = process.env.LICENSE_SERVER_URL || 'http://localhost:4000';
 
 // ── Middleware ──────────────────────────────────────────────
 app.use(express.json());
@@ -28,6 +29,99 @@ async function boot() {
 
   // Helper: get current session user
   const getUser = (req) => req.session ? req.session.user : null;
+
+  // ── License Verification ──────────────────────────────────
+  let licenseCache = { valid: false, status: 'unknown', lastCheck: 0, data: null };
+  const GRACE_DAYS = 7; // offline tolerance
+
+  function getLicenseKey() {
+    try {
+      const r = db.exec("SELECT value FROM settings WHERE key='license_key'");
+      return r.length > 0 ? r[0].values[0][0] : null;
+    } catch(e) { return null; }
+  }
+
+  async function verifyLicense(key) {
+    if (!key) return { valid: false, status: 'no_key' };
+    try {
+      const res = await fetch(LICENSE_SERVER + '/api/license/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ license_key: key })
+      });
+      const data = await res.json();
+      licenseCache = { valid: data.valid, status: data.status || 'unknown', lastCheck: Date.now(), data };
+      // Save last check timestamp
+      db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('license_last_check', ?)", [new Date().toISOString()]);
+      db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('license_status', ?)", [data.valid ? 'active' : (data.status || 'invalid')]);
+      save();
+      return data;
+    } catch (err) {
+      // Offline — use grace period
+      console.log('⚠️ Lisans sunucusuna ulaşılamadı, offline mod...');
+      try {
+        const r = db.exec("SELECT value FROM settings WHERE key='license_last_check'");
+        if (r.length > 0) {
+          const lastCheck = new Date(r[0].values[0][0]);
+          const daysSince = (Date.now() - lastCheck.getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSince <= GRACE_DAYS) {
+            licenseCache = { valid: true, status: 'offline_grace', lastCheck: lastCheck.getTime(), data: { valid: true, status: 'offline_grace' } };
+            return { valid: true, status: 'offline_grace' };
+          }
+        }
+      } catch(e) {}
+      licenseCache = { valid: false, status: 'offline_expired', lastCheck: 0, data: null };
+      return { valid: false, status: 'offline_expired', error: 'Lisans doğrulanamadı ve offline süre doldu' };
+    }
+  }
+
+  // Verify on boot
+  const bootKey = getLicenseKey();
+  if (bootKey) {
+    const result = await verifyLicense(bootKey);
+    console.log(result.valid ? '✅ Lisans geçerli' : '⚠️ Lisans: ' + (result.status || 'invalid'));
+  } else {
+    console.log('🔑 Lisans anahtarı girilmemiş');
+  }
+
+  // Periodic check every 24 hours
+  setInterval(async () => {
+    const key = getLicenseKey();
+    if (key) await verifyLicense(key);
+  }, 24 * 60 * 60 * 1000);
+
+  // License middleware for page routes
+  function requireLicense(req, res, next) {
+    const key = getLicenseKey();
+    if (!key) return res.redirect('/license.html');
+    if (!licenseCache.valid && licenseCache.status !== 'offline_grace') {
+      return res.redirect('/license-expired.html');
+    }
+    next();
+  }
+
+  // ── License API endpoints ──────────────────────────────
+  app.post('/api/license/activate', async (req, res) => {
+    try {
+      const { license_key } = req.body;
+      if (!license_key) return res.status(400).json({ valid: false, error: 'Lisans anahtarı gerekli' });
+      const result = await verifyLicense(license_key.toUpperCase().trim());
+      if (result.valid) {
+        db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('license_key', ?)", [license_key.toUpperCase().trim()]);
+        save();
+      }
+      res.json(result);
+    } catch (err) { res.status(500).json({ valid: false, error: err.message }); }
+  });
+
+  app.get('/api/license/status', (req, res) => {
+    const key = getLicenseKey();
+    res.json({
+      license_key: key || '',
+      ...licenseCache.data,
+      status: licenseCache.status
+    });
+  });
 
   // ── Auth API Endpoints (/api/auth/*) ─────────────────────
   // These must be defined BEFORE the CRUD apiRoutes so they
@@ -70,18 +164,18 @@ async function boot() {
   // Access denied page
   const denyHTML = `<html><body style="background:#0D1117;color:#F0F6FC;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column"><h1 style="font-size:4rem;margin-bottom:16px">🚫</h1><h2>Erişim Reddedildi</h2><p style="color:#8B949E;margin:8px 0 24px">Bu sayfaya erişim yetkiniz bulunmamaktadır.</p><a href="/" style="color:#f97316;text-decoration:none;font-weight:600">← Ana Sayfaya Dön</a></body></html>`;
 
-  // Helper: serve a views/ page only for specific roles
+  // Helper: serve a views/ page only for specific roles (with license check)
   function page(roles, file) {
-    return (req, res) => {
+    return [requireLicense, (req, res) => {
       const u = getUser(req);
       if (!u) return res.redirect('/login.html');
       if (!roles.includes(u.role)) return res.status(403).send(denyHTML);
       res.sendFile(path.join(VIEWS, file));
-    };
+    }];
   }
 
   // Root — redirect based on role
-  app.get('/', (req, res) => {
+  app.get('/', requireLicense, (req, res) => {
     const u = getUser(req);
     if (!u) return res.redirect('/login.html');
     // Check setup complete

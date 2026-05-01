@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lisans Aktivasyonu — Webyaz Restaurant</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo">🔑</div>
+      <h1 class="login-title">Lisans Aktivasyonu</h1>
+      <p class="login-subtitle">Yazılımı kullanmak için lisans anahtarınızı girin</p>
+
+      <div class="login-error" id="license-error"></div>
+
+      <form id="license-form" onsubmit="activateLicense(event)">
+        <div class="form-group">
+          <label class="form-label">LİSANS ANAHTARI</label>
+          <div class="input-icon-wrapper">
+            <span class="input-icon">🔑</span>
+            <input type="text" class="form-input login-input" id="license-key"
+                   placeholder="WR-XXXX-XXXX-XXXX" autocomplete="off" autofocus required
+                   style="text-transform:uppercase; letter-spacing:2px; font-weight:700">
+          </div>
+        </div>
+        <button type="submit" class="login-btn" id="activate-btn">
+          <span>Lisansı Aktive Et</span>
+        </button>
+      </form>
+
+      <div style="margin-top:24px; text-align:center">
+        <p style="color:var(--text-muted); font-size:0.8rem">
+          Lisans anahtarınız yok mu?<br>
+          <a href="https://webyaz.com.tr" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600">
+            webyaz.com.tr
+          </a> ile iletişime geçin
+        </p>
+      </div>
+    </div>
+    <footer class="dev-footer">Yazılım Geliştirici: <a href="https://webyaz.com.tr" target="_blank">webyaz.com.tr</a></footer>
+  </div>
+
+  <script>
+    async function activateLicense(e) {
+      e.preventDefault();
+      const key = document.getElementById('license-key').value.trim().toUpperCase();
+      const errEl = document.getElementById('license-error');
+      if (!key) { errEl.textContent = '⚠️ Lisans anahtarı gerekli'; errEl.classList.add('active'); return; }
+
+      errEl.classList.remove('active');
+      document.getElementById('activate-btn').disabled = true;
+
+      try {
+        const res = await fetch('/api/license/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ license_key: key })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.valid) {
+          errEl.textContent = '⚠️ ' + (data.error || 'Lisans doğrulanamadı');
+          errEl.classList.add('active');
+          document.getElementById('activate-btn').disabled = false;
+          return;
+        }
+        window.location.href = '/login.html';
+      } catch (err) {
+        errEl.textContent = '⚠️ Sunucu bağlantı hatası';
+        errEl.classList.add('active');
+        document.getElementById('activate-btn').disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
