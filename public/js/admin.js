@@ -388,6 +388,13 @@ async function loadSettings() {
   document.getElementById('set-footer').value = currentSettings.footer_text || '';
   settingsColor = currentSettings.primary_color || '#f97316';
   
+  // Social media
+  document.getElementById('set-instagram').value = currentSettings.social_instagram || '';
+  document.getElementById('set-facebook').value = currentSettings.social_facebook || '';
+  document.getElementById('set-twitter').value = currentSettings.social_twitter || '';
+  document.getElementById('set-whatsapp').value = currentSettings.social_whatsapp || '';
+  document.getElementById('set-website').value = currentSettings.social_website || '';
+  
   // Update color dots
   document.querySelectorAll('#set-colors .color-dot').forEach(d => {
     d.classList.toggle('active', d.dataset.color === settingsColor);
@@ -433,6 +440,11 @@ async function saveSettings() {
     footer_text: document.getElementById('set-footer').value.trim(),
     primary_color: settingsColor,
     is_setup_complete: 'true',
+    social_instagram: document.getElementById('set-instagram').value.trim(),
+    social_facebook: document.getElementById('set-facebook').value.trim(),
+    social_twitter: document.getElementById('set-twitter').value.trim(),
+    social_whatsapp: document.getElementById('set-whatsapp').value.trim(),
+    social_website: document.getElementById('set-website').value.trim(),
   };
   if (currentSettings.restaurant_logo) data.restaurant_logo = currentSettings.restaurant_logo;
   if (!data.restaurant_name) return showToast('Restoran adı gerekli', 'error');
