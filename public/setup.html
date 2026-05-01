@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kurulum Sihirbazı — Webyaz Restaurant</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/setup.css">
+</head>
+<body>
+  <div class="setup-container">
+    <!-- Progress Bar -->
+    <div class="setup-progress">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="setup-steps-indicator" id="steps-indicator"></div>
+
+    <!-- Step 1: Welcome -->
+    <div class="setup-step active" id="step-1">
+      <div class="setup-icon">🍽️</div>
+      <h1 class="setup-title">Webyaz Restaurant'a<br>Hoş Geldiniz!</h1>
+      <p class="setup-desc">Profesyonel restoran otomasyon sisteminizi birkaç adımda kuralım. Restoranınızın bilgilerini girin, sisteminiz hazır olsun.</p>
+      <div class="setup-features">
+        <div class="feature-item"><span class="feature-icon">📱</span> Sipariş Yönetimi</div>
+        <div class="feature-item"><span class="feature-icon">👨‍🍳</span> Mutfak Ekranı</div>
+        <div class="feature-item"><span class="feature-icon">💰</span> Kasa & Ödeme</div>
+        <div class="feature-item"><span class="feature-icon">📦</span> Paket Servis</div>
+      </div>
+      <button class="setup-btn primary" onclick="nextStep()">Kuruluma Başla →</button>
+    </div>
+
+    <!-- Step 2: Restaurant Info -->
+    <div class="setup-step" id="step-2">
+      <div class="setup-icon">🏪</div>
+      <h2 class="setup-title">Restoran Bilgileri</h2>
+      <p class="setup-desc">Restoranınızın temel bilgilerini girin</p>
+      <div class="setup-form">
+        <div class="form-group">
+          <label class="form-label">RESTORAN ADI *</label>
+          <input type="text" class="form-input" id="inp-name" placeholder="Örn: Lezzet Dünyası" value="">
+        </div>
+        <div class="form-group">
+          <label class="form-label">TELEFON *</label>
+          <input type="text" class="form-input" id="inp-phone" placeholder="Örn: 0212 555 00 00" value="">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ADRES</label>
+          <textarea class="form-input form-textarea" id="inp-address" placeholder="Örn: Atatürk Mah. Cumhuriyet Cad. No:15 Kadıköy/İstanbul"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">VERGİ NO (Opsiyonel)</label>
+          <input type="text" class="form-input" id="inp-taxno" placeholder="Örn: 1234567890">
+        </div>
+      </div>
+      <div class="setup-btn-row">
+        <button class="setup-btn secondary" onclick="prevStep()">← Geri</button>
+        <button class="setup-btn primary" onclick="nextStep()">Devam →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Logo -->
+    <div class="setup-step" id="step-3">
+      <div class="setup-icon">🎨</div>
+      <h2 class="setup-title">Logo & Görsel</h2>
+      <p class="setup-desc">Restoranınızın logosunu yükleyin (opsiyonel)</p>
+      <div class="setup-form">
+        <div class="logo-upload-area" id="logo-upload-area" onclick="document.getElementById('logo-file').click()">
+          <div class="logo-preview" id="logo-preview">
+            <span class="logo-placeholder">📷</span>
+            <span>Logo yüklemek için tıklayın</span>
+            <span class="logo-hint">PNG, JPG — Önerilen: 200x200px</span>
+          </div>
+          <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="previewLogo(this)">
+        </div>
+        <div class="form-group" style="margin-top:24px">
+          <label class="form-label">FİŞ ALT YAZISI</label>
+          <input type="text" class="form-input" id="inp-footer" placeholder="Afiyet olsun! Teşekkür ederiz." value="Afiyet olsun! Teşekkür ederiz.">
+        </div>
+        <div class="form-group">
+          <label class="form-label">TEMA RENGİ</label>
+          <div class="color-picker-row">
+            <div class="color-option active" data-color="#f97316" style="background:#f97316" onclick="selectColor(this)"></div>
+            <div class="color-option" data-color="#ef4444" style="background:#ef4444" onclick="selectColor(this)"></div>
+            <div class="color-option" data-color="#22c55e" style="background:#22c55e" onclick="selectColor(this)"></div>
+            <div class="color-option" data-color="#3b82f6" style="background:#3b82f6" onclick="selectColor(this)"></div>
+            <div class="color-option" data-color="#a855f7" style="background:#a855f7" onclick="selectColor(this)"></div>
+            <div class="color-option" data-color="#ec4899" style="background:#ec4899" onclick="selectColor(this)"></div>
+            <div class="color-option" data-color="#eab308" style="background:#eab308" onclick="selectColor(this)"></div>
+            <div class="color-option" data-color="#14b8a6" style="background:#14b8a6" onclick="selectColor(this)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="setup-btn-row">
+        <button class="setup-btn secondary" onclick="prevStep()">← Geri</button>
+        <button class="setup-btn primary" onclick="completeSetup()">✓ Kurulumu Tamamla</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Complete -->
+    <div class="setup-step" id="step-4">
+      <div class="setup-success-icon">✅</div>
+      <h2 class="setup-title">Kurulum Tamamlandı!</h2>
+      <p class="setup-desc">Sisteminiz kullanıma hazır. Aşağıdaki ekranları kullanabilirsiniz.</p>
+      <div class="setup-links">
+        <a href="/admin" class="setup-link-card">
+          <span class="link-icon">👨‍💼</span>
+          <span class="link-title">Yönetim Paneli</span>
+          <span class="link-desc">Ürün, kategori, masa yönetimi</span>
+        </a>
+        <a href="/order/1" class="setup-link-card" target="_blank">
+          <span class="link-icon">📱</span>
+          <span class="link-title">Sipariş Ekranı</span>
+          <span class="link-desc">Müşteri sipariş verir</span>
+        </a>
+        <a href="/delivery" class="setup-link-card" target="_blank">
+          <span class="link-icon">📦</span>
+          <span class="link-title">Paket Servis</span>
+          <span class="link-desc">Adrese teslim & gel-al</span>
+        </a>
+        <a href="/kitchen" class="setup-link-card" target="_blank">
+          <span class="link-icon">👨‍🍳</span>
+          <span class="link-title">Mutfak Ekranı</span>
+          <span class="link-desc">Siparişleri hazırla</span>
+        </a>
+        <a href="/cashier" class="setup-link-card" target="_blank">
+          <span class="link-icon">💰</span>
+          <span class="link-title">Kasa Ekranı</span>
+          <span class="link-desc">Ödeme al, adisyon yazdır</span>
+        </a>
+      </div>
+      <button class="setup-btn primary" onclick="window.location='/admin'" style="margin-top:24px">Yönetim Paneline Git →</button>
+    </div>
+  </div>
+
+  <script src="/js/setup.js"></script>
+</body>
+</html>

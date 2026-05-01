@@ -174,8 +174,16 @@ async function initDatabase() {
     }
 
     const settings = [
-      ['restaurant_name', 'Webyaz Restaurant'], ['restaurant_phone', '0212 555 00 00'],
-      ['restaurant_address', 'İstanbul, Türkiye'], ['currency', '₺'], ['tax_rate', '10'],
+      ['restaurant_name', 'Webyaz Restaurant'], 
+      ['restaurant_phone', '0212 555 00 00'],
+      ['restaurant_address', 'İstanbul, Türkiye'], 
+      ['restaurant_logo', ''],
+      ['tax_no', ''],
+      ['footer_text', 'Afiyet olsun! Teşekkür ederiz.'],
+      ['primary_color', '#f97316'],
+      ['currency', '₺'], 
+      ['tax_rate', '10'],
+      ['is_setup_complete', 'false'],
     ];
     for (const [key, val] of settings) {
       db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, val]);

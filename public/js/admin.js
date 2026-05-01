@@ -35,7 +35,7 @@ function switchTab(tab) {
   document.getElementById('panel-' + tab).classList.add('active');
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
   
-  const titles = { dashboard: 'Gösterge Paneli', categories: 'Kategoriler', products: 'Ürünler', tables: 'Masalar', orders: 'Siparişler' };
+  const titles = { dashboard: 'Gösterge Paneli', categories: 'Kategoriler', products: 'Ürünler', tables: 'Masalar', orders: 'Siparişler', settings: 'Ayarlar' };
   document.getElementById('topbar-title').textContent = titles[tab] || tab;
   
   if (tab === 'dashboard') loadDashboard();
@@ -43,6 +43,7 @@ function switchTab(tab) {
   else if (tab === 'products') loadProducts();
   else if (tab === 'tables') loadTables();
   else if (tab === 'orders') loadOrders();
+  else if (tab === 'settings') loadSettings();
 }
 
 function toggleSidebar() {
@@ -372,4 +373,77 @@ async function loadOrders() {
 async function updateOrderStatus(id, status) {
   await api('/orders/' + id + '/status', { method: 'PUT', body: { status } });
   showToast(`Sipariş #${id} durumu güncellendi`, 'success');
+}
+
+// ── Settings ─────────────────────────────────────────────────
+let currentSettings = {};
+let settingsColor = '#f97316';
+
+async function loadSettings() {
+  currentSettings = await api('/settings') || {};
+  document.getElementById('set-name').value = currentSettings.restaurant_name || '';
+  document.getElementById('set-phone').value = currentSettings.restaurant_phone || '';
+  document.getElementById('set-address').value = currentSettings.restaurant_address || '';
+  document.getElementById('set-taxno').value = currentSettings.tax_no || '';
+  document.getElementById('set-footer').value = currentSettings.footer_text || '';
+  settingsColor = currentSettings.primary_color || '#f97316';
+  
+  // Update color dots
+  document.querySelectorAll('#set-colors .color-dot').forEach(d => {
+    d.classList.toggle('active', d.dataset.color === settingsColor);
+    d.style.borderColor = d.dataset.color === settingsColor ? '#fff' : 'transparent';
+  });
+  
+  // Update logo preview
+  const preview = document.getElementById('set-logo-preview');
+  if (currentSettings.restaurant_logo) {
+    preview.innerHTML = `<img src="${currentSettings.restaurant_logo}" style="width:100%;height:100%;object-fit:contain">`;
+  }
+}
+
+function selectSettingsColor(el) {
+  document.querySelectorAll('#set-colors .color-dot').forEach(d => {
+    d.classList.remove('active');
+    d.style.borderColor = 'transparent';
+  });
+  el.classList.add('active');
+  el.style.borderColor = '#fff';
+  settingsColor = el.dataset.color;
+}
+
+async function uploadSettingsLogo(input) {
+  if (!input.files || !input.files[0]) return;
+  const formData = new FormData();
+  formData.append('image', input.files[0]);
+  const res = await fetch('/api/upload', { method: 'POST', body: formData });
+  const data = await res.json();
+  if (data.path) {
+    currentSettings.restaurant_logo = data.path;
+    document.getElementById('set-logo-preview').innerHTML = `<img src="${data.path}" style="width:100%;height:100%;object-fit:contain">`;
+    showToast('Logo yüklendi', 'success');
+  }
+}
+
+async function saveSettings() {
+  const data = {
+    restaurant_name: document.getElementById('set-name').value.trim(),
+    restaurant_phone: document.getElementById('set-phone').value.trim(),
+    restaurant_address: document.getElementById('set-address').value.trim(),
+    tax_no: document.getElementById('set-taxno').value.trim(),
+    footer_text: document.getElementById('set-footer').value.trim(),
+    primary_color: settingsColor,
+    is_setup_complete: 'true',
+  };
+  if (currentSettings.restaurant_logo) data.restaurant_logo = currentSettings.restaurant_logo;
+  if (!data.restaurant_name) return showToast('Restoran adı gerekli', 'error');
+  
+  await api('/settings', { method: 'PUT', body: data });
+  showToast('Ayarlar kaydedildi!', 'success');
+  
+  // Update sidebar logo text
+  const logoText = document.querySelector('.sidebar-logo-text');
+  if (logoText) {
+    const parts = data.restaurant_name.split(' ');
+    logoText.innerHTML = parts[0] + (parts.length > 1 ? ' <span>' + parts.slice(1).join(' ') + '</span>' : '');
+  }
 }

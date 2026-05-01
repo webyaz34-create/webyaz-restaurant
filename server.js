@@ -29,9 +29,25 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
   app.use('/api', apiRoutes);
   app.use('/api/upload', uploadRoutes);
 
+  // ── Helper: check if setup is complete ─────────────────
+  function isSetupComplete() {
+    try {
+      const rows = db.exec("SELECT value FROM settings WHERE key='is_setup_complete'");
+      return rows.length > 0 && rows[0].values[0][0] === 'true';
+    } catch (e) { return false; }
+  }
+
   // ── Page Routes ─────────────────────────────────────────
-  app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-  app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+  app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, 'public', 'setup.html')));
+  
+  app.get('/', (req, res) => {
+    if (!isSetupComplete()) return res.redirect('/setup');
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  });
+  app.get('/admin', (req, res) => {
+    if (!isSetupComplete()) return res.redirect('/setup');
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  });
   app.get('/order/:tableId?', (req, res) => res.sendFile(path.join(__dirname, 'public', 'order.html')));
   app.get('/kitchen', (req, res) => res.sendFile(path.join(__dirname, 'public', 'kitchen.html')));
   app.get('/cashier', (req, res) => res.sendFile(path.join(__dirname, 'public', 'cashier.html')));
