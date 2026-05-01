@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paket Servis — Webyaz Restaurant</title>
+  <meta name="description" content="Webyaz Restaurant paket servis ve gel-al sipariş sistemi. Online sipariş verin, kapınıza gelsin.">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/delivery.css">
+</head>
+<body>
+  <div class="delivery-page" id="delivery-page">
+    <!-- Header -->
+    <header class="delivery-header">
+      <div class="delivery-header-left">
+        <div class="delivery-logo">📦 Webyaz <span>Paket Servis</span></div>
+      </div>
+      <div class="delivery-type-toggle">
+        <button class="type-btn active" id="btn-delivery" onclick="setOrderType('delivery')">🚀 Adrese Teslim</button>
+        <button class="type-btn" id="btn-takeaway" onclick="setOrderType('takeaway')">🥡 Gel-Al</button>
+      </div>
+      <button class="cart-btn" id="cart-toggle" onclick="toggleCart()">
+        🛒
+        <span class="cart-count" id="cart-count">0</span>
+      </button>
+    </header>
+
+    <!-- Categories -->
+    <div class="category-tabs" id="category-tabs"></div>
+
+    <!-- Products -->
+    <div class="products-container">
+      <div class="product-grid" id="product-grid"></div>
+      <div class="empty-state hidden" id="products-empty">
+        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-text">Bu kategoride ürün bulunamadı</div>
+      </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+    <div class="cart-sidebar" id="cart-sidebar">
+      <div class="cart-header">
+        <h3>🛒 Sepetim</h3>
+        <button class="cart-close" onclick="toggleCart()">&times;</button>
+      </div>
+      <div class="cart-items" id="cart-items">
+        <div class="empty-state" id="cart-empty">
+          <div class="empty-state-icon">🛒</div>
+          <div class="empty-state-text">Sepetiniz boş</div>
+          <div class="empty-state-subtext">Menüden ürün ekleyin</div>
+        </div>
+      </div>
+      <div class="cart-footer" id="cart-footer" style="display:none">
+        <div class="cart-total">
+          <span>Toplam</span>
+          <span class="cart-total-amount" id="cart-total">₺0</span>
+        </div>
+        <button class="btn btn-primary btn-lg w-full" onclick="showCheckout()">Sipariş Ver</button>
+      </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal-overlay" id="checkout-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>📋 Sipariş Bilgileri</h3>
+          <button class="cart-close" onclick="closeCheckout()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="delivery-type-info" id="delivery-type-info">
+            <span class="delivery-type-badge delivery">🚀 Adrese Teslim</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ad Soyad *</label>
+            <input type="text" class="form-input" id="customer-name" placeholder="Adınız Soyadınız" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefon *</label>
+            <input type="tel" class="form-input" id="customer-phone" placeholder="05XX XXX XX XX" required>
+          </div>
+
+          <!-- Delivery Address -->
+          <div class="form-group" id="address-group">
+            <label class="form-label">Teslimat Adresi *</label>
+            <textarea class="form-textarea" id="customer-address" placeholder="Mahalle, Sokak, Bina No, Daire...&#10;Örn: Atatürk Mah. Cumhuriyet Cad. No:15/3" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sipariş Notu (Opsiyonel)</label>
+            <textarea class="form-textarea" id="customer-notes" placeholder="Özel istekleriniz... (kapı zili çalışmıyor, bahçe kapısından girin vb.)"></textarea>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <h4 style="margin-bottom:12px">Sipariş Özeti</h4>
+            <div id="checkout-items"></div>
+            <div class="cart-total" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-primary)">
+              <span>Toplam</span>
+              <span class="cart-total-amount" id="checkout-total">₺0</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeCheckout()">Geri</button>
+          <button class="btn btn-success btn-lg" onclick="submitOrder()" id="submit-order-btn">✓ Siparişi Onayla</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="order-confirm-overlay" id="success-overlay">
+      <div class="order-success">
+        <div class="order-success-icon">✅</div>
+        <h2>Siparişiniz Alındı!</h2>
+        <p id="success-message">Siparişiniz hazırlanmaya başlandı. En kısa sürede adresinize ulaştırılacaktır.</p>
+        <div class="order-number" id="order-number">#0</div>
+        <div class="success-info" id="success-info">
+          <div>📱 Sipariş durumunuzu telefonunuzdan takip edebilirsiniz.</div>
+        </div>
+        <br>
+        <button class="btn btn-primary btn-lg" onclick="newOrder()">Yeni Sipariş Ver</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/delivery.js"></script>
+</body>
+</html>

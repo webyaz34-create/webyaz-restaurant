@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mutfak Ekranı — Webyaz Restaurant</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/kitchen.css">
+</head>
+<body>
+  <div class="kitchen-page">
+    <header class="kitchen-header">
+      <div class="kitchen-header-left">
+        <div class="kitchen-title">👨‍🍳 Mutfak <span>Ekranı</span></div>
+        <div class="kitchen-stats">
+          <div class="kitchen-stat">
+            <span>Bekleyen:</span>
+            <span class="kitchen-stat-value pending" id="stat-pending">0</span>
+          </div>
+          <div class="kitchen-stat">
+            <span>Hazırlanan:</span>
+            <span class="kitchen-stat-value preparing" id="stat-preparing">0</span>
+          </div>
+          <div class="kitchen-stat">
+            <span>Hazır:</span>
+            <span class="kitchen-stat-value ready" id="stat-ready">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-md">
+        <button class="sound-toggle active" id="sound-toggle" onclick="toggleSound()">
+          🔔 Ses Açık
+        </button>
+        <div class="kitchen-clock" id="kitchen-clock">00:00:00</div>
+      </div>
+    </header>
+
+    <div class="kitchen-grid" id="kitchen-grid">
+      <div class="kitchen-empty" id="kitchen-empty">
+        <div class="kitchen-empty-icon">👨‍🍳</div>
+        <div class="kitchen-empty-text">Bekleyen sipariş yok</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Notification sound -->
+  <audio id="notification-sound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJOLk4N2cX+Kh4R/fnqOi46Hg36BiIWJiIWAgoSEhIKDhISEhIWFhYeHiIiJioqLjI2OkJGSk5SVl5manJ6goaOkp6mqrK+ws7W3ury+wMPFx8rMztDS1NbZ293f4ePl5+nr7e7w8fP09vf4+fr7/P3+//8A" type="audio/wav">
+  </audio>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/kitchen.js"></script>
+</body>
+</html>

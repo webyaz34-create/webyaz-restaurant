@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yönetim Paneli — Webyaz Restaurant</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">🍽️</div>
+          <div class="sidebar-logo-text">Webyaz <span>Restaurant</span></div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Gösterge Paneli
+        </button>
+        <button class="nav-item" data-tab="categories" onclick="switchTab('categories')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+          Kategoriler
+        </button>
+        <button class="nav-item" data-tab="products" onclick="switchTab('products')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+          Ürünler
+        </button>
+        <button class="nav-item" data-tab="tables" onclick="switchTab('tables')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="7" y1="16" x2="7" y2="20"/><line x1="17" y1="16" x2="17" y2="20"/></svg>
+          Masalar
+        </button>
+        <button class="nav-item" data-tab="orders" onclick="switchTab('orders')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Siparişler
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="nav-links">
+          <a href="/kitchen" class="nav-link" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            Mutfak Ekranı
+          </a>
+          <a href="/cashier" class="nav-link" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            Kasa Ekranı
+          </a>
+          <a href="/order/1" class="nav-link" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+            Sipariş Ekranı
+          </a>
+          <a href="/delivery" class="nav-link" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M16 16h6V8a2 2 0 00-2-2h-4"/><rect x="1" y="6" width="15" height="10" rx="1"/><circle cx="5.5" cy="18" r="2"/><circle cx="18.5" cy="18" r="2"/></svg>
+            Paket Servis
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+      <header class="topbar">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <h1 class="topbar-title" id="topbar-title">Gösterge Paneli</h1>
+        <div class="topbar-actions">
+          <span class="text-sm text-muted" id="current-time"></span>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <!-- Dashboard -->
+        <div class="tab-panel active" id="panel-dashboard">
+          <div class="stats-grid" id="stats-grid"></div>
+          <div class="section-header">
+            <h2 class="section-title">Son Siparişler</h2>
+          </div>
+          <div class="card" style="overflow-x:auto">
+            <table class="data-table" id="recent-orders-table">
+              <thead>
+                <tr><th>#</th><th>Masa</th><th>Müşteri</th><th>Tutar</th><th>Durum</th><th>Tarih</th></tr>
+              </thead>
+              <tbody id="recent-orders-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="tab-panel" id="panel-categories">
+          <div class="section-header">
+            <h2 class="section-title">Kategoriler</h2>
+            <button class="btn btn-primary" onclick="openCategoryModal()">+ Yeni Kategori</button>
+          </div>
+          <div class="card" style="overflow-x:auto">
+            <table class="data-table" id="categories-table">
+              <thead>
+                <tr><th>İkon</th><th>Ad</th><th>Sıra</th><th>Durum</th><th>İşlem</th></tr>
+              </thead>
+              <tbody id="categories-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div class="tab-panel" id="panel-products">
+          <div class="section-header">
+            <h2 class="section-title">Ürünler</h2>
+            <button class="btn btn-primary" onclick="openProductModal()">+ Yeni Ürün</button>
+          </div>
+          <div class="category-chips" id="product-filter-chips"></div>
+          <div class="product-grid-admin" id="products-grid"></div>
+        </div>
+
+        <!-- Tables -->
+        <div class="tab-panel" id="panel-tables">
+          <div class="section-header">
+            <h2 class="section-title">Masalar</h2>
+            <button class="btn btn-primary" onclick="openTableModal()">+ Yeni Masa</button>
+          </div>
+          <div class="table-grid" id="tables-grid"></div>
+        </div>
+
+        <!-- Orders -->
+        <div class="tab-panel" id="panel-orders">
+          <div class="section-header">
+            <h2 class="section-title">Siparişler</h2>
+            <div class="flex gap-sm">
+              <select class="form-select" id="order-status-filter" onchange="loadOrders()" style="width:auto">
+                <option value="">Tümü</option>
+                <option value="pending">Beklemede</option>
+                <option value="preparing">Hazırlanıyor</option>
+                <option value="ready">Hazır</option>
+                <option value="delivered">Teslim Edildi</option>
+                <option value="paid">Ödendi</option>
+                <option value="cancelled">İptal</option>
+              </select>
+            </div>
+          </div>
+          <div class="card" style="overflow-x:auto">
+            <table class="data-table">
+              <thead>
+                <tr><th>#</th><th>Masa</th><th>Müşteri</th><th>Telefon</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr>
+              </thead>
+              <tbody id="orders-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Category Modal -->
+  <div class="modal-overlay" id="category-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="category-modal-title">Yeni Kategori</h3>
+        <button class="cart-close" onclick="closeCategoryModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="category-id">
+        <div class="form-group">
+          <label class="form-label">Kategori Adı</label>
+          <input type="text" class="form-input" id="category-name" placeholder="Örn: Ana Yemekler">
+        </div>
+        <div class="form-group">
+          <label class="form-label">İkon (Emoji)</label>
+          <input type="text" class="form-input" id="category-icon" placeholder="🍽️" value="🍽️">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sıralama</label>
+          <input type="number" class="form-input" id="category-sort" value="0">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCategoryModal()">İptal</button>
+        <button class="btn btn-primary" onclick="saveCategory()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Modal -->
+  <div class="modal-overlay" id="product-modal">
+    <div class="modal" style="max-width:640px">
+      <div class="modal-header">
+        <h3 id="product-modal-title">Yeni Ürün</h3>
+        <button class="cart-close" onclick="closeProductModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="product-id">
+        <div class="form-group">
+          <label class="form-label">Ürün Adı</label>
+          <input type="text" class="form-input" id="product-name" placeholder="Örn: Adana Kebap">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Açıklama</label>
+          <textarea class="form-textarea" id="product-desc" placeholder="Ürün açıklaması..."></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group">
+            <label class="form-label">Fiyat (₺)</label>
+            <input type="number" class="form-input" id="product-price" step="0.01" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kategori</label>
+            <select class="form-select" id="product-category"></select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group">
+            <label class="form-label">Hazırlık Süresi (dk)</label>
+            <input type="number" class="form-input" id="product-preptime" value="15">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sıralama</label>
+            <input type="number" class="form-input" id="product-sort" value="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ürün Görseli</label>
+          <input type="file" class="form-input" id="product-image" accept="image/*">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeProductModal()">İptal</button>
+        <button class="btn btn-primary" onclick="saveProduct()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Modal -->
+  <div class="modal-overlay" id="table-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="table-modal-title">Yeni Masa</h3>
+        <button class="cart-close" onclick="closeTableModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="table-id">
+        <div class="form-group">
+          <label class="form-label">Masa Adı</label>
+          <input type="text" class="form-input" id="table-name" placeholder="Örn: Masa 1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kapasite</label>
+          <input type="number" class="form-input" id="table-capacity" value="4">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kat / Bölge</label>
+          <input type="text" class="form-input" id="table-floor" placeholder="Örn: Zemin Kat" value="Zemin Kat">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeTableModal()">İptal</button>
+        <button class="btn btn-primary" onclick="saveTable()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

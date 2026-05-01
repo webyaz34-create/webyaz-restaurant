@@ -1,0 +1,22 @@
+{
+  "name": "webyaz-restaurant",
+  "version": "1.0.0",
+  "description": "Webyaz Restaurant Otomasyon Sistemi — Profesyonel Sipariş Yönetimi",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["restaurant", "pos", "kitchen-display", "order-management"],
+  "author": "Webyaz",
+  "license": "ISC",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.8.0",
+    "sql.js": "^1.11.0"
+  }
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kasa Ekranı — Webyaz Restaurant</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/cashier.css">
+</head>
+<body>
+  <div class="cashier-page">
+    <header class="cashier-header">
+      <div class="cashier-header-left">
+        <div class="cashier-title">💰 Kasa <span>Ekranı</span></div>
+      </div>
+      <div class="cashier-summary">
+        <div class="cashier-summary-item">
+          <div class="cashier-summary-value" id="summary-revenue">₺0</div>
+          <div class="cashier-summary-label">Günlük Ciro</div>
+        </div>
+        <div class="cashier-summary-item">
+          <div class="cashier-summary-value" id="summary-orders">0</div>
+          <div class="cashier-summary-label">Toplam Sipariş</div>
+        </div>
+        <div class="cashier-summary-item">
+          <div class="cashier-summary-value" id="summary-active">0</div>
+          <div class="cashier-summary-label">Aktif Sipariş</div>
+        </div>
+        <div class="cashier-summary-item">
+          <div class="cashier-summary-value" id="summary-tables">0/0</div>
+          <div class="cashier-summary-label">Dolu Masa</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="cashier-layout">
+      <!-- Left: Tables -->
+      <div class="cashier-tables" id="cashier-tables"></div>
+
+      <!-- Right: Detail -->
+      <div class="cashier-detail" id="cashier-detail">
+        <div class="detail-empty" id="detail-empty">
+          <div class="detail-empty-icon">🪑</div>
+          <div>Detayları görmek için bir masa seçin</div>
+        </div>
+        <div id="detail-content" style="display:none;flex-direction:column;height:100%">
+          <div class="detail-header">
+            <div class="detail-table-name" id="detail-table-name">—</div>
+            <div class="detail-customer" id="detail-customer"></div>
+          </div>
+          <div class="detail-orders" id="detail-orders"></div>
+          <div class="detail-footer" id="detail-footer" style="display:none">
+            <div class="detail-total">
+              <span>Toplam Hesap</span>
+              <span class="detail-total-amount" id="detail-total">₺0</span>
+            </div>
+            <div class="detail-payment-btns">
+              <button class="btn btn-success" onclick="payOrder('cash')">💵 Nakit</button>
+              <button class="btn btn-primary" onclick="payOrder('card')">💳 Kredi Kartı</button>
+              <button class="btn btn-secondary" onclick="printReceipt()">🖨️ Yazdır</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt (hidden, for print) -->
+  <div class="receipt-print" id="receipt-print" style="display:none"></div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/cashier.js"></script>
+</body>
+</html>

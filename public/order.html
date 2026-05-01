@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sipariş Ver — Webyaz Restaurant</title>
+  <meta name="description" content="Webyaz Restaurant online sipariş sistemi. Masanızdan kolayca sipariş verin.">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/order.css">
+</head>
+<body>
+  <div class="order-page" id="order-page">
+    <!-- Header -->
+    <header class="order-header">
+      <div class="order-header-left">
+        <div class="order-logo">🍽️ Webyaz <span>Restaurant</span></div>
+        <div class="order-table-badge" id="table-badge">Masa Yükleniyor...</div>
+      </div>
+      <button class="cart-btn" id="cart-toggle" onclick="toggleCart()">
+        🛒
+        <span class="cart-count" id="cart-count">0</span>
+      </button>
+    </header>
+
+    <!-- Categories -->
+    <div class="category-tabs" id="category-tabs"></div>
+
+    <!-- Products -->
+    <div class="products-container">
+      <div class="product-grid" id="product-grid"></div>
+      <div class="empty-state hidden" id="products-empty">
+        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-text">Bu kategoride ürün bulunamadı</div>
+      </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+    <div class="cart-sidebar" id="cart-sidebar">
+      <div class="cart-header">
+        <h3>🛒 Sepetim</h3>
+        <button class="cart-close" onclick="toggleCart()">&times;</button>
+      </div>
+      <div class="cart-items" id="cart-items">
+        <div class="empty-state" id="cart-empty">
+          <div class="empty-state-icon">🛒</div>
+          <div class="empty-state-text">Sepetiniz boş</div>
+          <div class="empty-state-subtext">Menüden ürün ekleyin</div>
+        </div>
+      </div>
+      <div class="cart-footer" id="cart-footer" style="display:none">
+        <div class="cart-total">
+          <span>Toplam</span>
+          <span class="cart-total-amount" id="cart-total">₺0</span>
+        </div>
+        <button class="btn btn-primary btn-lg w-full" onclick="showCheckout()">Sipariş Ver</button>
+      </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal-overlay" id="checkout-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>📋 Sipariş Bilgileri</h3>
+          <button class="cart-close" onclick="closeCheckout()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Ad Soyad *</label>
+            <input type="text" class="form-input" id="customer-name" placeholder="Adınız Soyadınız" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefon *</label>
+            <input type="tel" class="form-input" id="customer-phone" placeholder="05XX XXX XX XX" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Masa</label>
+            <input type="text" class="form-input" id="customer-table" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sipariş Notu (Opsiyonel)</label>
+            <textarea class="form-textarea" id="customer-notes" placeholder="Özel istekleriniz..."></textarea>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <h4 style="margin-bottom:12px">Sipariş Özeti</h4>
+            <div id="checkout-items"></div>
+            <div class="cart-total" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-primary)">
+              <span>Toplam</span>
+              <span class="cart-total-amount" id="checkout-total">₺0</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeCheckout()">Geri</button>
+          <button class="btn btn-success btn-lg" onclick="submitOrder()" id="submit-order-btn">✓ Siparişi Onayla</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="order-confirm-overlay" id="success-overlay">
+      <div class="order-success">
+        <div class="order-success-icon">✅</div>
+        <h2>Siparişiniz Alındı!</h2>
+        <p>Siparişiniz mutfağa iletildi. Kısa sürede hazır olacaktır.</p>
+        <div class="order-number" id="order-number">#0</div>
+        <br>
+        <button class="btn btn-primary btn-lg" onclick="newOrder()">Yeni Sipariş Ver</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/order.js"></script>
+</body>
+</html>

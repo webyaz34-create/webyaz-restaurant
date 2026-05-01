@@ -1,0 +1,74 @@
+/* WEBYAZ RESTAURANT — Kitchen Display Styles */
+
+.kitchen-page { min-height: 100vh; background: #0A0E14; }
+
+.kitchen-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: var(--bg-secondary); border-bottom: 2px solid var(--primary); }
+.kitchen-header-left { display: flex; align-items: center; gap: 16px; }
+.kitchen-title { font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+.kitchen-title span { color: var(--primary); }
+.kitchen-stats { display: flex; gap: 20px; }
+.kitchen-stat { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-secondary); }
+.kitchen-stat-value { font-weight: 700; font-size: 1.1rem; }
+.kitchen-stat-value.pending { color: var(--warning); }
+.kitchen-stat-value.preparing { color: var(--info); }
+.kitchen-stat-value.ready { color: var(--success); }
+.kitchen-clock { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.sound-toggle { background: var(--bg-tertiary); border: 1px solid var(--border-primary); color: var(--text-secondary); padding: 8px 14px; border-radius: var(--radius-md); cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; transition: all var(--transition-fast); font-family: var(--font-family); }
+.sound-toggle:hover { border-color: var(--primary); color: var(--primary); }
+.sound-toggle.active { background: var(--primary-glow); border-color: var(--primary); color: var(--primary); }
+
+/* Orders Grid */
+.kitchen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; padding: 24px; }
+
+/* Order Card */
+.kitchen-order { border-radius: var(--radius-lg); overflow: hidden; animation: slideUp 0.4s ease-out; transition: all var(--transition-normal); }
+.kitchen-order.status-pending { border: 2px solid var(--warning); background: var(--bg-secondary); }
+.kitchen-order.status-preparing { border: 2px solid var(--info); background: var(--bg-secondary); }
+.kitchen-order.status-ready { border: 2px solid var(--success); background: rgba(46, 160, 67, 0.05); }
+.kitchen-order.new-order { animation: pulseGlow 1s ease-in-out 3; }
+
+.kitchen-order-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+.kitchen-order.status-pending .kitchen-order-header { background: var(--warning-bg); }
+.kitchen-order.status-preparing .kitchen-order-header { background: var(--info-bg); }
+.kitchen-order.status-ready .kitchen-order-header { background: var(--success-bg); }
+
+.kitchen-order-id { font-size: 1.2rem; font-weight: 800; }
+.kitchen-order-table { font-size: 1rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+.kitchen-order-time { font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+.kitchen-order-elapsed { font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+.kitchen-order-elapsed.urgent { background: var(--danger-bg); color: var(--danger); }
+.kitchen-order-elapsed.warning { background: var(--warning-bg); color: var(--warning); }
+.kitchen-order-elapsed.ok { background: var(--success-bg); color: var(--success); }
+
+.kitchen-order-customer { padding: 8px 20px; background: var(--bg-tertiary); font-size: 0.82rem; color: var(--text-secondary); display: flex; align-items: center; gap: 12px; }
+
+.kitchen-order-items { padding: 12px 20px; }
+.kitchen-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(48, 54, 61, 0.5); font-size: 1.05rem; }
+.kitchen-item:last-child { border-bottom: none; }
+.kitchen-item-qty { font-weight: 800; color: var(--primary); min-width: 30px; font-size: 1.2rem; }
+.kitchen-item-name { flex: 1; font-weight: 500; }
+.kitchen-item-note { font-size: 0.78rem; color: var(--warning); font-style: italic; }
+
+.kitchen-order-notes { padding: 8px 20px; background: rgba(210, 153, 34, 0.08); border-top: 1px solid rgba(210, 153, 34, 0.2); font-size: 0.85rem; color: var(--warning); display: flex; align-items: center; gap: 8px; }
+
+.kitchen-order-actions { padding: 12px 20px 16px; display: flex; gap: 8px; }
+.kitchen-order-actions .btn { flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; }
+
+/* No orders state */
+.kitchen-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; color: var(--text-tertiary); }
+.kitchen-empty-icon { font-size: 5rem; margin-bottom: 20px; opacity: 0.3; }
+.kitchen-empty-text { font-size: 1.3rem; font-weight: 600; }
+
+/* Delivery/Takeaway Order Highlight */
+.kitchen-order.delivery-order { box-shadow: 0 0 20px rgba(249, 115, 22, 0.25); }
+.kitchen-order.delivery-order .kitchen-order-header { background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,88,12,0.1)) !important; }
+.delivery-badge { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff !important; padding: 4px 12px; border-radius: 8px; font-size: 0.85rem !important; animation: deliveryPulse 2s ease-in-out infinite; }
+@keyframes deliveryPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+.kitchen-order-address { padding: 8px 20px; background: rgba(249,115,22,0.08); border-top: 1px solid rgba(249,115,22,0.2); font-size: 0.82rem; color: #f97316; display: flex; align-items: center; gap: 8px; }
+
+@media (max-width: 768px) {
+  .kitchen-grid { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+  .kitchen-header { flex-direction: column; gap: 12px; padding: 12px 16px; }
+  .kitchen-stats { flex-wrap: wrap; }
+}
