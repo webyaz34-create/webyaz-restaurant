@@ -4,6 +4,8 @@
 
 Profesyonel restoran sipariş yönetim sistemi. Gerçek zamanlı sipariş akışı, mutfak ekranı, kasa yönetimi ve paket servis desteği.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/webyaz34-create/webyaz-restaurant)
+
 ---
 
 ## 📋 Gereksinimler
