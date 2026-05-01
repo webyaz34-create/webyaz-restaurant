@@ -143,3 +143,8 @@ h1 { font-size: 2rem; font-weight: 700; } h2 { font-size: 1.5rem; font-weight: 7
 .empty-state-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
 
 @media (max-width: 768px) { html { font-size: 14px; } .modal { width: 95%; } }
+
+/* Developer Footer */
+.dev-footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 6px 16px; background: linear-gradient(180deg, transparent, rgba(13,17,23,0.95)); font-size: 0.7rem; color: var(--text-tertiary); z-index: 50; pointer-events: none; }
+.dev-footer a { color: var(--primary); pointer-events: auto; font-weight: 600; text-decoration: none; transition: color 0.2s; }
+.dev-footer a:hover { color: var(--primary-light); }
