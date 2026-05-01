@@ -38,6 +38,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           Siparişler
         </button>
+        <button class="nav-item" data-tab="users" onclick="switchTab('users')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Kullanıcılar
+        </button>
         <button class="nav-item" data-tab="settings" onclick="switchTab('settings')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           Ayarlar
@@ -70,8 +74,10 @@
       <header class="topbar">
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
         <h1 class="topbar-title" id="topbar-title">Gösterge Paneli</h1>
-        <div class="topbar-actions">
+        <div class="topbar-actions" style="display:flex;align-items:center;gap:16px">
           <span class="text-sm text-muted" id="current-time"></span>
+          <span class="text-sm" id="user-display" style="color:var(--primary);font-weight:600"></span>
+          <button class="btn btn-sm btn-secondary" onclick="logout()" style="font-size:0.75rem">🚪 Çıkış</button>
         </div>
       </header>
 
@@ -149,6 +155,22 @@
                 <tr><th>#</th><th>Masa</th><th>Müşteri</th><th>Telefon</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr>
               </thead>
               <tbody id="orders-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Users -->
+        <div class="tab-panel" id="panel-users">
+          <div class="section-header">
+            <h2 class="section-title">Kullanıcı Yönetimi</h2>
+            <button class="btn btn-primary" onclick="openUserModal()">+ Yeni Kullanıcı</button>
+          </div>
+          <div class="card" style="overflow-x:auto">
+            <table class="data-table" id="users-table">
+              <thead>
+                <tr><th>Kullanıcı</th><th>Ad</th><th>Rol</th><th>Durum</th><th>İşlem</th></tr>
+              </thead>
+              <tbody id="users-body"></tbody>
             </table>
           </div>
         </div>
@@ -347,6 +369,45 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeTableModal()">İptal</button>
         <button class="btn btn-primary" onclick="saveTable()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Modal -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="user-modal-title">Yeni Kullanıcı</h3>
+        <button class="cart-close" onclick="closeUserModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="user-id">
+        <div class="form-group">
+          <label class="form-label">Kullanıcı Adı</label>
+          <input type="text" class="form-input" id="user-username" placeholder="Örn: garson1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Şifre</label>
+          <input type="text" class="form-input" id="user-password" placeholder="Şifre belirleyin">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Görünen Ad</label>
+          <input type="text" class="form-input" id="user-displayname" placeholder="Örn: Ahmet">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rol</label>
+          <select class="form-select" id="user-role">
+            <option value="admin">👨‍💼 Yönetici (Tüm yetkiler)</option>
+            <option value="cashier">💰 Kasacı</option>
+            <option value="kitchen">👨‍🍳 Mutfak</option>
+            <option value="waiter" selected>🧑‍🍳 Garson</option>
+            <option value="delivery">📦 Paket Servis</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeUserModal()">İptal</button>
+        <button class="btn btn-primary" onclick="saveUser()">Kaydet</button>
       </div>
     </div>
   </div>

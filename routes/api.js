@@ -317,5 +317,52 @@ module.exports = function (db, save) {
     } catch (err) { res.status(500).json({ error: err.message }); }
   });
 
+  // ══════════════════════════════════════════════════
+  //  USERS
+  // ══════════════════════════════════════════════════
+  router.get('/users', (req, res) => {
+    try {
+      const users = queryAll('SELECT id, username, display_name, role, is_active, created_at FROM users ORDER BY id');
+      res.json(users);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
+  router.post('/users', (req, res) => {
+    try {
+      const { username, password, display_name, role } = req.body;
+      if (!username || !password || !display_name) return res.status(400).json({ error: 'Tüm alanlar gerekli' });
+      const id = runSql('INSERT INTO users (username, password, display_name, role) VALUES (?, ?, ?, ?)', [username, password, display_name, role || 'waiter']);
+      save();
+      res.json({ id, username, display_name, role });
+    } catch (err) {
+      if (err.message && err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Bu kullanıcı adı zaten mevcut' });
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.put('/users/:id', (req, res) => {
+    try {
+      const { username, password, display_name, role, is_active } = req.body;
+      if (password) {
+        db.run('UPDATE users SET username=?, password=?, display_name=?, role=?, is_active=? WHERE id=?',
+          [username, password, display_name, role, is_active !== undefined ? is_active : 1, req.params.id]);
+      } else {
+        db.run('UPDATE users SET username=?, display_name=?, role=?, is_active=? WHERE id=?',
+          [username, display_name, role, is_active !== undefined ? is_active : 1, req.params.id]);
+      }
+      save();
+      res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
+  router.delete('/users/:id', (req, res) => {
+    try {
+      if (req.params.id == 1) return res.status(400).json({ error: 'Ana yönetici hesabı silinemez' });
+      db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
+      save();
+      res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+  });
+
   return router;
 };

@@ -101,12 +101,36 @@ async function initDatabase() {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'waiter',
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // ── Seed Data ────────────────────────────────────────────
   const countResult = db.exec('SELECT COUNT(*) as cnt FROM categories');
   const categoryCount = countResult.length > 0 ? countResult[0].values[0][0] : 0;
 
   if (categoryCount === 0) {
     console.log('📦 Seeding database with sample data...');
+
+    // Default users
+    const users = [
+      ['admin', 'admin123', 'Yönetici', 'admin'],
+      ['kasa', 'kasa123', 'Kasacı', 'cashier'],
+      ['mutfak', 'mutfak123', 'Şef', 'kitchen'],
+      ['garson', 'garson123', 'Garson', 'waiter'],
+      ['paket', 'paket123', 'Paket Servis', 'delivery'],
+    ];
+    for (const [username, password, display_name, role] of users) {
+      db.run('INSERT OR IGNORE INTO users (username, password, display_name, role) VALUES (?, ?, ?, ?)', [username, password, display_name, role]);
+    }
 
     const categories = [
       ['Başlangıçlar', '🥗', 1], ['Ana Yemekler', '🥩', 2], ['Pizzalar', '🍕', 3],

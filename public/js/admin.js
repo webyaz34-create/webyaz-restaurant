@@ -8,6 +8,7 @@ let tables = [];
 
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  loadCurrentUser();
   loadDashboard();
   updateClock();
   setInterval(updateClock, 1000);
@@ -35,7 +36,7 @@ function switchTab(tab) {
   document.getElementById('panel-' + tab).classList.add('active');
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
   
-  const titles = { dashboard: 'Gösterge Paneli', categories: 'Kategoriler', products: 'Ürünler', tables: 'Masalar', orders: 'Siparişler', settings: 'Ayarlar' };
+  const titles = { dashboard: 'Gösterge Paneli', categories: 'Kategoriler', products: 'Ürünler', tables: 'Masalar', orders: 'Siparişler', users: 'Kullanıcılar', settings: 'Ayarlar' };
   document.getElementById('topbar-title').textContent = titles[tab] || tab;
   
   if (tab === 'dashboard') loadDashboard();
@@ -43,6 +44,7 @@ function switchTab(tab) {
   else if (tab === 'products') loadProducts();
   else if (tab === 'tables') loadTables();
   else if (tab === 'orders') loadOrders();
+  else if (tab === 'users') loadUsers();
   else if (tab === 'settings') loadSettings();
 }
 
@@ -458,4 +460,108 @@ async function saveSettings() {
     const parts = data.restaurant_name.split(' ');
     logoText.innerHTML = parts[0] + (parts.length > 1 ? ' <span>' + parts.slice(1).join(' ') + '</span>' : '');
   }
+}
+
+// ── Auth / Current User ──────────────────────────────────────
+async function loadCurrentUser() {
+  try {
+    const res = await fetch('/api/auth/me');
+    if (!res.ok) return;
+    const user = await res.json();
+    const el = document.getElementById('user-display');
+    if (el) {
+      const roleIcons = { admin: '👨‍💼', cashier: '💰', kitchen: '👨‍🍳', waiter: '🧑‍🍳', delivery: '📦' };
+      el.textContent = `${roleIcons[user.role] || ''} ${user.display_name}`;
+    }
+  } catch (e) {}
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/login.html';
+}
+
+// ── Users ─────────────────────────────────────────────────
+let allUsers = [];
+
+const ROLE_LABELS = {
+  admin: '👨‍💼 Yönetici',
+  cashier: '💰 Kasacı',
+  kitchen: '👨‍🍳 Mutfak',
+  waiter: '🧑‍🍳 Garson',
+  delivery: '📦 Paket Servis',
+};
+
+async function loadUsers() {
+  allUsers = await api('/users') || [];
+  const tbody = document.getElementById('users-body');
+  if (allUsers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:32px">Kullanıcı bulunamadı</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allUsers.map(u => `
+    <tr>
+      <td><strong>${u.username}</strong></td>
+      <td>${u.display_name}</td>
+      <td>${ROLE_LABELS[u.role] || u.role}</td>
+      <td><span class="badge ${u.is_active ? 'badge-ready' : 'badge-cancelled'}">${u.is_active ? 'Aktif' : 'Pasif'}</span></td>
+      <td>
+        <div class="flex gap-sm">
+          <button class="btn btn-sm btn-secondary" onclick="editUser(${u.id})">✏️</button>
+          ${u.id !== 1 ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">🗑️</button>` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openUserModal(user = null) {
+  document.getElementById('user-modal-title').textContent = user ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı';
+  document.getElementById('user-id').value = user ? user.id : '';
+  document.getElementById('user-username').value = user ? user.username : '';
+  document.getElementById('user-password').value = '';
+  document.getElementById('user-password').placeholder = user ? 'İstersen değiştir (boş bırakırsan değişmez)' : 'Şifre belirleyin';
+  document.getElementById('user-displayname').value = user ? user.display_name : '';
+  document.getElementById('user-role').value = user ? user.role : 'waiter';
+  document.getElementById('user-modal').classList.add('active');
+}
+
+function closeUserModal() { document.getElementById('user-modal').classList.remove('active'); }
+
+function editUser(id) {
+  const user = allUsers.find(u => u.id === id);
+  if (user) openUserModal(user);
+}
+
+async function saveUser() {
+  const id = document.getElementById('user-id').value;
+  const data = {
+    username: document.getElementById('user-username').value.trim(),
+    display_name: document.getElementById('user-displayname').value.trim(),
+    role: document.getElementById('user-role').value,
+  };
+  const password = document.getElementById('user-password').value;
+  if (password) data.password = password;
+  
+  if (!data.username) return showToast('Kullanıcı adı gerekli', 'error');
+  if (!data.display_name) return showToast('Görünen ad gerekli', 'error');
+  if (!id && !password) return showToast('Şifre gerekli', 'error');
+  
+  const result = id 
+    ? await api('/users/' + id, { method: 'PUT', body: data })
+    : await api('/users', { method: 'POST', body: data });
+  
+  if (result && result.error) return showToast(result.error, 'error');
+  
+  closeUserModal();
+  loadUsers();
+  showToast('Kullanıcı kaydedildi', 'success');
+}
+
+async function deleteUser(id) {
+  if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+  const result = await api('/users/' + id, { method: 'DELETE' });
+  if (result && result.error) return showToast(result.error, 'error');
+  loadUsers();
+  showToast('Kullanıcı silindi', 'success');
 }

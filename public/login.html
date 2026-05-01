@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giriş — Webyaz Restaurant</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo" id="login-logo">🍽️</div>
+      <h1 class="login-title" id="login-title">Webyaz Restaurant</h1>
+      <p class="login-subtitle">Sisteme giriş yapın</p>
+      
+      <div class="login-error" id="login-error"></div>
+      
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">KULLANICI ADI</label>
+          <div class="input-icon-wrapper">
+            <span class="input-icon">👤</span>
+            <input type="text" class="form-input login-input" id="username" placeholder="Kullanıcı adınız" autocomplete="username" autofocus required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ŞİFRE</label>
+          <div class="input-icon-wrapper">
+            <span class="input-icon">🔒</span>
+            <input type="password" class="form-input login-input" id="password" placeholder="Şifreniz" autocomplete="current-password" required>
+          </div>
+        </div>
+        <button type="submit" class="login-btn" id="login-btn">
+          <span id="login-btn-text">Giriş Yap</span>
+          <div class="login-spinner" id="login-spinner"></div>
+        </button>
+      </form>
+      
+      <div class="login-roles" id="login-roles">
+        <p class="login-roles-title">Hızlı Giriş</p>
+        <div class="roles-grid">
+          <button class="role-btn" onclick="quickLogin('admin','admin123')">👨‍💼 Yönetici</button>
+          <button class="role-btn" onclick="quickLogin('kasa','kasa123')">💰 Kasacı</button>
+          <button class="role-btn" onclick="quickLogin('mutfak','mutfak123')">👨‍🍳 Mutfak</button>
+          <button class="role-btn" onclick="quickLogin('garson','garson123')">🧑‍🍳 Garson</button>
+          <button class="role-btn" onclick="quickLogin('paket','paket123')">📦 Paket</button>
+        </div>
+      </div>
+    </div>
+    <footer class="dev-footer">Yazılım Geliştirici: <a href="https://webyaz.com.tr" target="_blank">webyaz.com.tr</a></footer>
+  </div>
+
+  <script src="/js/login.js"></script>
+</body>
+</html>
