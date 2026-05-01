@@ -183,7 +183,7 @@ async function initDatabase() {
       ['primary_color', '#f97316'],
       ['currency', '₺'], 
       ['tax_rate', '10'],
-      ['is_setup_complete', 'false'],
+      ['is_setup_complete', 'true'],
     ];
     for (const [key, val] of settings) {
       db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, val]);
