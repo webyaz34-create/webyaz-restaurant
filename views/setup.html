@@ -18,7 +18,7 @@
     <!-- Step 1: Welcome -->
     <div class="setup-step active" id="step-1">
       <div class="setup-icon">🍽️</div>
-      <h1 class="setup-title">Webyaz Restaurant'a<br>Hoş Geldiniz!</h1>
+      <h1 class="setup-title">Webyaz Restaurant Yazılımına<br>Hoş Geldiniz!</h1>
       <p class="setup-desc">Profesyonel restoran otomasyon sisteminizi birkaç adımda kuralım. Restoranınızın bilgilerini girin, sisteminiz hazır olsun.</p>
       <div class="setup-features">
         <div class="feature-item"><span class="feature-icon">📱</span> Sipariş Yönetimi</div>
@@ -92,15 +92,71 @@
       </div>
       <div class="setup-btn-row">
         <button class="setup-btn secondary" onclick="prevStep()">← Geri</button>
+        <button class="setup-btn primary" onclick="nextStep()">Devam →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Staff Setup -->
+    <div class="setup-step" id="step-4">
+      <div class="setup-icon">👥</div>
+      <h2 class="setup-title">Personel Ekle</h2>
+      <p class="setup-desc">Sistemi kullanacak personeli ekleyin. Sonradan Admin Panelden de ekleyebilirsiniz.</p>
+
+      <div style="background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:12px;padding:16px;margin-bottom:20px">
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:6px">📡 Personel bu adresi telefonuna yazacak:</div>
+        <div style="font-family:monospace;font-size:1.1rem;font-weight:800;color:var(--primary)" id="setup-server-url">Yükleniyor...</div>
+      </div>
+
+      <div id="staff-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:200px;overflow-y:auto"></div>
+
+      <div style="background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:12px;padding:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">KULLANICI ADI</label>
+            <input type="text" class="form-input" id="staff-username" placeholder="örn: garson1">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">ŞİFRE</label>
+            <input type="text" class="form-input" id="staff-password" placeholder="örn: 1234">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">AD SOYAD</label>
+            <input type="text" class="form-input" id="staff-name" placeholder="örn: Ahmet">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">ROL</label>
+            <select class="form-input" id="staff-role">
+              <option value="waiter">👤 Garson</option>
+              <option value="kitchen">👨‍🍳 Mutfak</option>
+              <option value="cashier">💰 Kasacı</option>
+              <option value="delivery">📦 Paket Servis</option>
+            </select>
+          </div>
+        </div>
+        <button class="setup-btn primary" onclick="addStaffUser()" style="width:100%;margin:0;padding:10px">+ Personel Ekle</button>
+      </div>
+
+      <div id="staff-msg" style="margin-top:8px;font-size:0.8rem;min-height:20px"></div>
+
+      <div class="setup-btn-row" style="margin-top:16px">
+        <button class="setup-btn secondary" onclick="prevStep()">← Geri</button>
         <button class="setup-btn primary" onclick="completeSetup()">✓ Kurulumu Tamamla</button>
       </div>
     </div>
 
-    <!-- Step 4: Complete -->
-    <div class="setup-step" id="step-4">
+    <!-- Step 5: Complete -->
+    <div class="setup-step" id="step-5">
       <div class="setup-success-icon">✅</div>
       <h2 class="setup-title">Kurulum Tamamlandı!</h2>
       <p class="setup-desc">Sisteminiz kullanıma hazır. Aşağıdaki ekranları kullanabilirsiniz.</p>
+
+      <div style="background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:12px;padding:14px;margin-bottom:20px;text-align:center">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px">📡 Diğer cihazlardan erişim adresi:</div>
+        <div style="font-family:monospace;font-size:1.2rem;font-weight:800;color:var(--primary)" id="complete-server-url"></div>
+      </div>
+
       <div class="setup-links">
         <a href="/admin" class="setup-link-card">
           <span class="link-icon">👨‍💼</span>
@@ -110,12 +166,7 @@
         <a href="/order/1" class="setup-link-card" target="_blank">
           <span class="link-icon">📱</span>
           <span class="link-title">Sipariş Ekranı</span>
-          <span class="link-desc">Müşteri sipariş verir</span>
-        </a>
-        <a href="/delivery" class="setup-link-card" target="_blank">
-          <span class="link-icon">📦</span>
-          <span class="link-title">Paket Servis</span>
-          <span class="link-desc">Adrese teslim & gel-al</span>
+          <span class="link-desc">Sipariş al, masa yönet</span>
         </a>
         <a href="/kitchen" class="setup-link-card" target="_blank">
           <span class="link-icon">👨‍🍳</span>

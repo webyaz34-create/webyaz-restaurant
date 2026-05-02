@@ -1,302 +1,172 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║  WEBYAZ RESTAURANT — Delivery / Takeaway JS                 ║
+// ║  WEBYAZ RESTAURANT — Delivery Tracking Panel JS              ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 const socket = io();
-let cart = [];
-let allProducts = [];
-let allCategories = [];
-let currentCategory = null;
-let orderType = 'delivery'; // 'delivery' | 'takeaway'
+let deliveryOrders = [];
 
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  loadMenu();
+  socket.emit('join_room', 'delivery');
+  loadDeliveryOrders();
+  setInterval(loadDeliveryOrders, 10000);
 });
 
-async function loadMenu() {
+socket.on('order_update', () => loadDeliveryOrders());
+socket.on('new_order', () => loadDeliveryOrders());
+
+// ── Load Orders ──────────────────────────────────────────────
+async function loadDeliveryOrders() {
   try {
-    allCategories = await fetch('/api/categories').then(r => r.json());
-    allProducts = await fetch('/api/products?active_only=1').then(r => r.json());
-    renderCategories();
-    renderProducts();
+    const allOrders = await fetch('/api/orders?include_items=1').then(r => r.json());
+    // Filter only delivery/takeaway orders
+    deliveryOrders = allOrders.filter(o =>
+      o.order_type === 'delivery' || o.order_type === 'takeaway'
+    );
+    renderBoard();
+    updateStats();
   } catch (e) {
-    showToast('Menü yüklenemedi', 'error');
+    console.error('Paket siparişler yüklenemedi:', e);
   }
 }
 
-// ── Order Type Toggle ────────────────────────────────────────
-function setOrderType(type) {
-  orderType = type;
-  document.getElementById('btn-delivery').classList.toggle('active', type === 'delivery');
-  document.getElementById('btn-takeaway').classList.toggle('active', type === 'takeaway');
+// ── Render Board ─────────────────────────────────────────────
+function renderBoard() {
+  const preparing = deliveryOrders.filter(o => ['pending', 'preparing'].includes(o.status));
+  const ready = deliveryOrders.filter(o => o.status === 'ready');
+  const outForDelivery = deliveryOrders.filter(o => o.status === 'out_for_delivery');
+  const delivered = deliveryOrders.filter(o => ['delivered', 'paid'].includes(o.status));
+
+  renderColumn('col-preparing', preparing, 'count-preparing');
+  renderColumn('col-ready', ready, 'count-ready');
+  renderColumn('col-out', outForDelivery, 'count-out');
+  renderColumn('col-delivered', delivered.slice(0, 20), 'count-delivered');
 }
 
-// ── Categories ───────────────────────────────────────────────
-function renderCategories() {
-  const container = document.getElementById('category-tabs');
-  const activeCategories = allCategories.filter(c => c.is_active);
-  container.innerHTML = `
-    <button class="category-tab ${!currentCategory ? 'active' : ''}" onclick="selectCategory(null)">🍽️ Tümü</button>
-    ${activeCategories.map(c => `
-      <button class="category-tab ${currentCategory === c.id ? 'active' : ''}" onclick="selectCategory(${c.id})">${c.icon} ${c.name}</button>
-    `).join('')}
-  `;
-}
+function renderColumn(containerId, orders, countId) {
+  const container = document.getElementById(containerId);
+  document.getElementById(countId).textContent = orders.length;
 
-function selectCategory(catId) {
-  currentCategory = catId;
-  renderCategories();
-  renderProducts();
-}
-
-// ── Products ─────────────────────────────────────────────────
-function renderProducts() {
-  const grid = document.getElementById('product-grid');
-  const empty = document.getElementById('products-empty');
-  
-  let filtered = allProducts.filter(p => p.is_active);
-  if (currentCategory) filtered = filtered.filter(p => p.category_id === currentCategory);
-  
-  if (filtered.length === 0) {
-    grid.innerHTML = '';
-    empty.classList.remove('hidden');
+  if (orders.length === 0) {
+    container.innerHTML = `
+      <div class="delivery-empty">
+        <div class="delivery-empty-icon">${getEmptyIcon(containerId)}</div>
+        <div>Sipariş yok</div>
+      </div>`;
     return;
   }
-  
-  empty.classList.add('hidden');
-  grid.innerHTML = filtered.map(p => `
-    <div class="product-card" onclick="addToCart(${p.id})">
-      <div class="product-img">${p.image_path ? `<img src="${p.image_path}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover">` : getCategoryIcon(p.category_id)}</div>
-      <div class="product-info">
-        <div class="product-name">${p.name}</div>
-        <div class="product-price">₺${p.price.toLocaleString('tr-TR')}</div>
-      </div>
-    </div>
-  `).join('');
+
+  container.innerHTML = orders.map(o => renderCard(o, containerId)).join('');
 }
 
-function getCategoryIcon(catId) {
-  const cat = allCategories.find(c => c.id === catId);
-  return cat ? cat.icon : '🍽️';
+function getEmptyIcon(colId) {
+  const icons = { 'col-preparing': '🍳', 'col-ready': '✅', 'col-out': '🏃', 'col-delivered': '📋' };
+  return icons[colId] || '📦';
 }
 
-// ── Cart ─────────────────────────────────────────────────────
-function addToCart(productId) {
-  const product = allProducts.find(p => p.id === productId);
-  if (!product) return;
-  
-  const existing = cart.find(item => item.product_id === productId);
-  if (existing) {
-    existing.quantity++;
-    existing.total_price = existing.quantity * existing.unit_price;
-  } else {
-    cart.push({
-      product_id: product.id,
-      product_name: product.name,
-      unit_price: product.price,
-      quantity: 1,
-      total_price: product.price,
-      notes: '',
-    });
-  }
-  
-  updateCartUI();
-  showToast(`${product.name} sepete eklendi`, 'success');
-}
+function renderCard(order, colId) {
+  const isDelivery = order.order_type === 'delivery';
+  const typeClass = isDelivery ? 'type-delivery' : 'type-takeaway';
+  const typeLabel = isDelivery ? '🚀 Teslim' : '🥡 Gel-Al';
 
-function removeFromCart(index) {
-  cart.splice(index, 1);
-  updateCartUI();
-}
+  const timeDiff = getTimeDiff(order.created_at);
+  const itemsList = (order.items || []).map(i => `${i.quantity}× ${i.product_name}`).join(', ');
 
-function changeQty(index, delta) {
-  cart[index].quantity += delta;
-  if (cart[index].quantity <= 0) {
-    cart.splice(index, 1);
-  } else {
-    cart[index].total_price = cart[index].quantity * cart[index].unit_price;
-  }
-  updateCartUI();
-}
-
-function updateCartUI() {
-  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const total = cart.reduce((sum, item) => sum + item.total_price, 0);
-  
-  document.getElementById('cart-count').textContent = count;
-  document.getElementById('cart-total').textContent = '₺' + total.toLocaleString('tr-TR');
-  
-  const itemsContainer = document.getElementById('cart-items');
-  const footer = document.getElementById('cart-footer');
-  
-  if (cart.length === 0) {
-    if (footer) footer.style.display = 'none';
-    itemsContainer.innerHTML = `
-      <div class="empty-state" id="cart-empty">
-        <div class="empty-state-icon">🛒</div>
-        <div class="empty-state-text">Sepetiniz boş</div>
-        <div class="empty-state-subtext">Menüden ürün ekleyin</div>
-      </div>
-    `;
-    return;
-  }
-  
-  if (footer) footer.style.display = 'block';
-  
-  itemsContainer.innerHTML = cart.map((item, i) => `
-    <div class="cart-item">
-      <div class="cart-item-info">
-        <div class="cart-item-name">${item.product_name}</div>
-        <div class="cart-item-price">₺${item.unit_price.toLocaleString('tr-TR')} × ${item.quantity} = <strong>₺${item.total_price.toLocaleString('tr-TR')}</strong></div>
-      </div>
-      <div class="cart-item-qty">
-        <button onclick="changeQty(${i}, -1)">−</button>
-        <span>${item.quantity}</span>
-        <button onclick="changeQty(${i}, 1)">+</button>
-      </div>
-      <button class="cart-item-remove" onclick="removeFromCart(${i})">✕</button>
-    </div>
-  `).join('');
-}
-
-function toggleCart() {
-  document.getElementById('cart-overlay').classList.toggle('active');
-  document.getElementById('cart-sidebar').classList.toggle('active');
-}
-
-// ── Checkout ─────────────────────────────────────────────────
-function showCheckout() {
-  if (cart.length === 0) return showToast('Sepetiniz boş', 'warning');
-  
-  // Close cart sidebar
-  document.getElementById('cart-overlay').classList.remove('active');
-  document.getElementById('cart-sidebar').classList.remove('active');
-  
-  // Set delivery type badge
-  const typeInfo = document.getElementById('delivery-type-info');
-  if (orderType === 'delivery') {
-    typeInfo.innerHTML = '<span class="delivery-type-badge delivery">🚀 Adrese Teslim</span>';
-    document.getElementById('address-group').style.display = 'block';
-  } else {
-    typeInfo.innerHTML = '<span class="delivery-type-badge takeaway">🥡 Gel-Al (Paket)</span>';
-    document.getElementById('address-group').style.display = 'none';
-  }
-  
-  // Fill checkout summary
-  const total = cart.reduce((sum, item) => sum + item.total_price, 0);
-  document.getElementById('checkout-total').textContent = '₺' + total.toLocaleString('tr-TR');
-  document.getElementById('checkout-items').innerHTML = cart.map(item => `
-    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-primary);font-size:0.88rem">
-      <span>${item.quantity}× ${item.product_name}</span>
-      <strong>₺${item.total_price.toLocaleString('tr-TR')}</strong>
-    </div>
-  `).join('');
-  
-  document.getElementById('checkout-modal').classList.add('active');
-}
-
-function closeCheckout() {
-  document.getElementById('checkout-modal').classList.remove('active');
-}
-
-async function submitOrder() {
-  const name = document.getElementById('customer-name').value.trim();
-  const phone = document.getElementById('customer-phone').value.trim();
-  const address = document.getElementById('customer-address').value.trim();
-  const notes = document.getElementById('customer-notes').value.trim();
-  
-  if (!name) return showToast('Ad Soyad alanı zorunludur', 'error');
-  if (!phone) return showToast('Telefon alanı zorunludur', 'error');
-  if (orderType === 'delivery' && !address) return showToast('Teslimat adresi zorunludur', 'error');
-  if (cart.length === 0) return showToast('Sepetiniz boş', 'error');
-  
-  const btn = document.getElementById('submit-order-btn');
-  btn.disabled = true;
-  btn.textContent = 'Gönderiliyor...';
-  
-  try {
-    const orderData = {
-      table_id: null,
-      order_type: orderType,
-      customer_name: name,
-      customer_phone: phone,
-      delivery_address: address,
-      notes: notes,
-      items: cart.map(item => ({
-        product_id: item.product_id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        notes: item.notes,
-      })),
-    };
-    
-    const res = await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData),
-    });
-    
-    const order = await res.json();
-    
-    if (order.error) {
-      showToast(order.error, 'error');
-      btn.disabled = false;
-      btn.textContent = '✓ Siparişi Onayla';
-      return;
-    }
-    
-    // Emit to kitchen & cashier
-    socket.emit('new_order', order);
-    
-    // Show success
-    closeCheckout();
-    document.getElementById('order-number').textContent = '#' + order.id;
-    
-    if (orderType === 'delivery') {
-      document.getElementById('success-message').textContent = 
-        'Siparişiniz hazırlanmaya başlandı. En kısa sürede adresinize ulaştırılacaktır.';
+  let actions = '';
+  if (colId === 'col-preparing') {
+    actions = `<div class="delivery-card-actions">
+      <button class="btn btn-success btn-sm" onclick="updateStatus(${order.id}, 'ready')">✅ Hazır</button>
+      <button class="btn btn-danger btn-sm" onclick="updateStatus(${order.id}, 'cancelled')">✕ İptal</button>
+    </div>`;
+  } else if (colId === 'col-ready') {
+    if (isDelivery) {
+      actions = `<div class="delivery-card-actions">
+        <button class="btn btn-warning btn-sm" onclick="updateStatus(${order.id}, 'out_for_delivery')">🏃 Kuryeye Ver</button>
+      </div>`;
     } else {
-      document.getElementById('success-message').textContent = 
-        'Siparişiniz hazırlanmaya başlandı. Hazır olduğunda sizi arayacağız.';
+      actions = `<div class="delivery-card-actions">
+        <button class="btn btn-success btn-sm" onclick="updateStatus(${order.id}, 'delivered')">📦 Teslim Edildi</button>
+      </div>`;
     }
-    
-    document.getElementById('success-overlay').classList.add('active');
-    
-    // Clear cart
-    cart = [];
-    updateCartUI();
-    
-  } catch (err) {
-    showToast('Sipariş gönderilemedi: ' + err.message, 'error');
-    btn.disabled = false;
-    btn.textContent = '✓ Siparişi Onayla';
+  } else if (colId === 'col-out') {
+    actions = `<div class="delivery-card-actions">
+      <button class="btn btn-success btn-sm" onclick="updateStatus(${order.id}, 'delivered')">📦 Teslim Edildi</button>
+    </div>`;
+  }
+
+  return `
+    <div class="delivery-card">
+      <div class="delivery-card-header">
+        <span class="delivery-card-id">#${order.id}</span>
+        <span class="delivery-card-type ${typeClass}">${typeLabel}</span>
+      </div>
+      <div class="delivery-card-customer">
+        👤 ${order.customer_name || 'Belirtilmedi'} ${order.customer_phone ? '• 📱 ' + order.customer_phone : ''}
+      </div>
+      ${isDelivery && order.delivery_address ? `<div style="font-size:0.7rem;color:var(--text-tertiary);margin-bottom:4px">📍 ${order.delivery_address}</div>` : ''}
+      <div class="delivery-card-items">
+        ${itemsList || 'Ürün bilgisi yok'}
+      </div>
+      <div class="delivery-card-footer">
+        <span class="delivery-card-amount">₺${(order.total_amount || 0).toLocaleString('tr-TR')}</span>
+        <span class="delivery-card-time">⏱ ${timeDiff}</span>
+      </div>
+      ${actions}
+    </div>`;
+}
+
+// ── Update Stats ─────────────────────────────────────────────
+function updateStats() {
+  const active = deliveryOrders.filter(o => !['delivered', 'paid', 'cancelled'].includes(o.status));
+  const completed = deliveryOrders.filter(o => ['delivered', 'paid'].includes(o.status));
+  const revenue = completed.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
+  document.getElementById('stat-active').textContent = active.length;
+  document.getElementById('stat-today').textContent = completed.length;
+  document.getElementById('stat-revenue').textContent = '₺' + revenue.toLocaleString('tr-TR');
+}
+
+// ── Update Order Status ──────────────────────────────────────
+async function updateStatus(orderId, status) {
+  try {
+    await fetch(`/api/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+
+    socket.emit('order_update', { orderId, status });
+    showToast(getStatusMessage(status), 'success');
+    loadDeliveryOrders();
+  } catch (e) {
+    showToast('Durum güncellenemedi', 'error');
   }
 }
 
-function newOrder() {
-  document.getElementById('success-overlay').classList.remove('active');
-  document.getElementById('customer-name').value = '';
-  document.getElementById('customer-phone').value = '';
-  document.getElementById('customer-address').value = '';
-  document.getElementById('customer-notes').value = '';
-  const btn = document.getElementById('submit-order-btn');
-  btn.disabled = false;
-  btn.textContent = '✓ Siparişi Onayla';
+function getStatusMessage(status) {
+  const msgs = {
+    ready: '✅ Sipariş hazır!',
+    out_for_delivery: '🏃 Kurye yola çıktı!',
+    delivered: '📦 Sipariş teslim edildi!',
+    cancelled: '✕ Sipariş iptal edildi',
+  };
+  return msgs[status] || 'Durum güncellendi';
 }
 
-// ── Toast ────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────
+function getTimeDiff(dateStr) {
+  if (!dateStr) return '—';
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+  if (diff < 1) return 'Şimdi';
+  if (diff < 60) return `${diff} dk`;
+  return `${Math.floor(diff / 60)} sa ${diff % 60} dk`;
+}
+
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;
   container.appendChild(toast);
-  setTimeout(() => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); }, 2500);
+  setTimeout(() => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
 }
-
-// ── Socket Events ────────────────────────────────────────────
-socket.on('order_status_update', (data) => {
-  // Could update order tracking here
-});

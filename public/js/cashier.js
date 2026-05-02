@@ -9,9 +9,10 @@ let selectedTableOrders = [];
 let deliveryOrders = [];
 let selectedDeliveryOrder = null;
 
-// ── Init ─────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   socket.emit('join_room', 'cashier');
+  checkRegisterStatus();
   loadSummary();
   loadTables();
   loadDeliveryOrders();
@@ -250,7 +251,6 @@ async function payOrder(method) {
   if (selectedTableOrders.length === 0) return;
   
   const methodName = method === 'cash' ? 'Nakit' : 'Kredi Kartı';
-  if (!confirm(`${methodName} ile ödeme almak istediğinize emin misiniz?`)) return;
   
   try {
     for (const order of selectedTableOrders) {
@@ -367,4 +367,119 @@ function showToast(message, type = 'info') {
   toast.textContent = message;
   container.appendChild(toast);
   setTimeout(() => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
+// ── Cash Register ───────────────────────────────────────────────
+let currentRegister = null;
+
+async function checkRegisterStatus() {
+  try {
+    const data = await fetch('/api/cash-register/current').then(r => r.json());
+    if (data.open) {
+      currentRegister = data.register;
+      document.getElementById('register-open-overlay').style.display = 'none';
+      document.getElementById('btn-close-register').style.display = 'block';
+      const badge = document.getElementById('register-status-badge');
+      badge.style.display = 'block';
+      badge.style.background = 'rgba(34,197,94,0.15)';
+      badge.style.color = '#22c55e';
+      badge.style.border = '1px solid rgba(34,197,94,0.3)';
+      badge.innerHTML = `🟢 Kasa Açık | Açılış: ₺${(currentRegister.opening_amount || 0).toLocaleString('tr-TR')}`;
+    } else {
+      currentRegister = null;
+      document.getElementById('register-open-overlay').style.display = 'flex';
+      document.getElementById('btn-close-register').style.display = 'none';
+      const badge = document.getElementById('register-status-badge');
+      badge.style.display = 'block';
+      badge.style.background = 'rgba(239,68,68,0.15)';
+      badge.style.color = '#ef4444';
+      badge.style.border = '1px solid rgba(239,68,68,0.3)';
+      badge.innerHTML = '🔴 Kasa Kapalı';
+    }
+  } catch (e) {}
+}
+
+async function openRegister() {
+  const opening = parseFloat(document.getElementById('register-opening').value) || 0;
+  const notes = document.getElementById('register-open-note').value;
+  try {
+    await fetch('/api/cash-register/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ opening_amount: opening, opened_by: 'Kasa', notes }),
+    });
+    showToast(`Kasa açıldı! Başlangıç: ₺${opening.toLocaleString('tr-TR')}`, 'success');
+    checkRegisterStatus();
+  } catch (e) {
+    showToast('Kasa açılamadı', 'error');
+  }
+}
+
+function openCloseRegisterModal() {
+  if (!currentRegister) return;
+  const fmt = (n) => Number(n || 0).toLocaleString('tr-TR');
+
+  document.getElementById('register-close-summary').innerHTML = [
+    { icon: '💵', label: 'Açılış', value: '₺' + fmt(currentRegister.opening_amount), color: '#3b82f6' },
+    { icon: '💰', label: 'Nakit Satış', value: '₺' + fmt(currentRegister.cash_sales), color: '#22c55e' },
+    { icon: '💳', label: 'Kart Satış', value: '₺' + fmt(currentRegister.card_sales), color: '#a855f7' },
+    { icon: '📊', label: 'Beklenen Nakit', value: '₺' + fmt(currentRegister.expected_amount), color: '#f97316' },
+  ].map(c => `
+    <div class="card" style="padding:12px;text-align:center">
+      <div style="font-size:1.2rem">${c.icon}</div>
+      <div style="font-size:0.65rem;color:var(--text-muted);margin:4px 0">${c.label}</div>
+      <div style="font-size:1rem;font-weight:800;color:${c.color}">${c.value}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('register-closing').value = '';
+  document.getElementById('register-close-note').value = '';
+  document.getElementById('register-diff').innerHTML = '';
+  document.getElementById('register-close-modal').classList.add('active');
+
+  // Live difference calculation
+  document.getElementById('register-closing').addEventListener('input', function() {
+    const closing = parseFloat(this.value) || 0;
+    const expected = currentRegister.expected_amount || 0;
+    const diff = closing - expected;
+    const el = document.getElementById('register-diff');
+    if (diff === 0) {
+      el.innerHTML = '✅ Kasa tam!';
+      el.style.background = 'rgba(34,197,94,0.15)'; el.style.color = '#22c55e';
+    } else if (diff > 0) {
+      el.innerHTML = `⬆️ Fazla: +₺${diff.toLocaleString('tr-TR')}`;
+      el.style.background = 'rgba(59,130,246,0.15)'; el.style.color = '#3b82f6';
+    } else {
+      el.innerHTML = `⬇️ Eksik: -₺${Math.abs(diff).toLocaleString('tr-TR')}`;
+      el.style.background = 'rgba(239,68,68,0.15)'; el.style.color = '#ef4444';
+    }
+  });
+}
+
+function closeCloseRegisterModal() {
+  document.getElementById('register-close-modal').classList.remove('active');
+}
+
+async function closeRegister() {
+  const closing = parseFloat(document.getElementById('register-closing').value);
+  if (isNaN(closing)) return showToast('Kasadaki nakit tutarını girin', 'error');
+  const notes = document.getElementById('register-close-note').value;
+
+  if (!confirm('Kasayı kapatmak istediğinize emin misiniz?')) return;
+
+  try {
+    const result = await fetch('/api/cash-register/close', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ closing_amount: closing, closed_by: 'Kasa', notes }),
+    }).then(r => r.json());
+
+    closeCloseRegisterModal();
+    const diff = result.difference || 0;
+    const diffText = diff === 0 ? 'Tam!' : (diff > 0 ? `+₺${diff}` : `-₺${Math.abs(diff)}`);
+    showToast(`Kasa kapatıldı! Fark: ${diffText}`, 'success');
+    checkRegisterStatus();
+  } catch (e) {
+    showToast('Kasa kapatılamadı', 'error');
+  }
 }

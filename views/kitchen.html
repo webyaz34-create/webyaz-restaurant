@@ -28,10 +28,12 @@
         </div>
       </div>
       <div class="flex items-center gap-md">
+        <a href="/" style="text-decoration:none;color:var(--text-primary);display:flex;align-items:center;gap:6px;font-size:0.85rem;padding:8px 14px;border-radius:8px;background:var(--bg-tertiary);border:1px solid var(--border-primary)">← Geri</a>
         <button class="sound-toggle active" id="sound-toggle" onclick="toggleSound()">
           🔔 Ses Açık
         </button>
         <div class="kitchen-clock" id="kitchen-clock">00:00:00</div>
+        <button onclick="fetch('/api/auth/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:var(--bg-tertiary);border:1px solid var(--border-primary);color:var(--text-muted);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem">🚪 Çıkış</button>
       </div>
     </header>
 

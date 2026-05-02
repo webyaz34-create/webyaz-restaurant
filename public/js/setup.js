@@ -3,7 +3,7 @@
 // ╚══════════════════════════════════════════════════════════════╝
 
 let currentStep = 1;
-const totalSteps = 4;
+const totalSteps = 5;
 let selectedColor = '#f97316';
 let logoFile = null;
 
@@ -29,6 +29,7 @@ function nextStep() {
     document.getElementById(`step-${currentStep}`).classList.add('active');
     updateProgress();
     renderStepIndicator();
+    if (currentStep === 4) loadServerURL();
   }
 }
 
@@ -154,10 +155,11 @@ async function completeSetup() {
     // Remove loading, show success
     loading.remove();
     document.getElementById(`step-${currentStep}`).classList.remove('active');
-    currentStep = 4;
+    currentStep = 5;
     document.getElementById(`step-${currentStep}`).classList.add('active');
     updateProgress();
     renderStepIndicator();
+    loadServerURL();
 
   } catch (err) {
     loading.remove();
@@ -169,3 +171,70 @@ async function completeSetup() {
 const style = document.createElement('style');
 style.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }`;
 document.head.appendChild(style);
+
+// ── Server URL ───────────────────────────────────────────────
+async function loadServerURL() {
+  try {
+    const info = await fetch('/api/server-info').then(r => r.json());
+    const url = `http://${info.ip}:${info.port}`;
+    const el1 = document.getElementById('setup-server-url');
+    const el2 = document.getElementById('complete-server-url');
+    if (el1) el1.textContent = url;
+    if (el2) el2.textContent = url;
+  } catch(e) {
+    const el1 = document.getElementById('setup-server-url');
+    if (el1) el1.textContent = 'http://localhost:3000';
+  }
+}
+
+// ── Staff User ───────────────────────────────────────────────
+const addedStaff = [];
+
+async function addStaffUser() {
+  const username = document.getElementById('staff-username').value.trim();
+  const password = document.getElementById('staff-password').value.trim();
+  const name = document.getElementById('staff-name').value.trim();
+  const role = document.getElementById('staff-role').value;
+  const msg = document.getElementById('staff-msg');
+
+  if (!username || !password || !name) {
+    msg.innerHTML = '<span style="color:#ef4444">Tüm alanları doldurun</span>';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, display_name: name, role })
+    });
+    const data = await res.json();
+    if (data.error) {
+      msg.innerHTML = `<span style="color:#ef4444">${data.error}</span>`;
+      return;
+    }
+
+    addedStaff.push({ username, name, role });
+    renderStaffList();
+
+    document.getElementById('staff-username').value = '';
+    document.getElementById('staff-password').value = '';
+    document.getElementById('staff-name').value = '';
+    msg.innerHTML = `<span style="color:#22c55e">✅ ${name} eklendi!</span>`;
+  } catch(e) {
+    msg.innerHTML = '<span style="color:#ef4444">Hata oluştu</span>';
+  }
+}
+
+function renderStaffList() {
+  const roleLabels = { waiter:'👤 Garson', kitchen:'👨‍🍳 Mutfak', cashier:'💰 Kasacı', delivery:'📦 Kurye' };
+  document.getElementById('staff-list').innerHTML = addedStaff.map(s => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-primary)">
+      <div>
+        <span style="font-weight:700;font-size:0.85rem">${s.name}</span>
+        <span style="color:var(--text-muted);font-size:0.75rem;margin-left:8px">${s.username}</span>
+      </div>
+      <span style="font-size:0.75rem;padding:3px 8px;border-radius:6px;background:var(--bg-hover)">${roleLabels[s.role] || s.role}</span>
+    </div>
+  `).join('');
+}

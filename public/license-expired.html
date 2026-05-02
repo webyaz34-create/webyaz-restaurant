@@ -32,6 +32,13 @@
     <a href="https://webyaz.com.tr" target="_blank" class="expired-contact">
       📞 Lisans Yenileme — webyaz.com.tr
     </a>
+
+    <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border-primary)">
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">Yeni lisans anahtarınız varsa:</div>
+      <input type="text" id="new-key" placeholder="WR-XXXX-XXXX-XXXX" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-primary);color:var(--text-primary);font-family:monospace;font-size:0.9rem;text-align:center;box-sizing:border-box;margin-bottom:10px">
+      <button onclick="activateKey()" id="activate-btn" style="width:100%;padding:12px;border:none;border-radius:10px;background:#22c55e;color:#fff;font-weight:700;font-size:0.9rem;cursor:pointer;transition:0.2s">🔑 Lisansı Aktifleştir</button>
+      <div id="activate-msg" style="margin-top:8px;font-size:0.8rem;min-height:20px"></div>
+    </div>
   </div>
 
   <script>
@@ -46,6 +53,31 @@
         if (data.status) info.innerHTML += `<div><span>Durum</span><span style="color:#ef4444;font-weight:700">${data.status === 'expired' ? 'Süresi Dolmuş' : data.status === 'revoked' ? 'İptal Edilmiş' : data.status}</span></div>`;
       } catch(e) {}
     })();
+
+    async function activateKey() {
+      const key = document.getElementById('new-key').value.trim();
+      const msg = document.getElementById('activate-msg');
+      const btn = document.getElementById('activate-btn');
+      if (!key) { msg.innerHTML = '<span style="color:#ef4444">Lisans anahtarı girin</span>'; return; }
+      btn.disabled = true; btn.textContent = 'Kontrol ediliyor...';
+      try {
+        const res = await fetch('/api/license/activate', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ license_key: key })
+        });
+        const data = await res.json();
+        if (data.valid) {
+          msg.innerHTML = '<span style="color:#22c55e">✅ Lisans aktifleştirildi! Yönlendiriliyorsunuz...</span>';
+          setTimeout(() => location.href = '/', 1500);
+        } else {
+          msg.innerHTML = `<span style="color:#ef4444">❌ ${data.error || data.message || 'Geçersiz lisans'}</span>`;
+          btn.disabled = false; btn.textContent = '🔑 Lisansı Aktifleştir';
+        }
+      } catch(e) {
+        msg.innerHTML = '<span style="color:#ef4444">Bağlantı hatası</span>';
+        btn.disabled = false; btn.textContent = '🔑 Lisansı Aktifleştir';
+      }
+    }
   </script>
 </body>
 </html>

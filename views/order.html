@@ -3,109 +3,231 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sipariş Ver — Webyaz Restaurant</title>
-  <meta name="description" content="Webyaz Restaurant online sipariş sistemi. Masanızdan kolayca sipariş verin.">
+  <title>Sipariş Yönetimi — Webyaz Restaurant</title>
   <link rel="stylesheet" href="/css/common.css">
-  <link rel="stylesheet" href="/css/order.css">
+  <style>
+    :root { --green:#22c55e; --orange:#f97316; --red:#ef4444; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; }
+
+    /* Header */
+    .page-header { background:var(--bg-secondary); border-bottom:1px solid var(--border-primary); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+    .page-header-left { display:flex; align-items:center; gap:12px; }
+    .page-header h1 { font-size:1.05rem; font-weight:700; } .page-header h1 span { color:var(--primary); }
+    .header-btns { display:flex; gap:8px; align-items:center; }
+    .hbtn { background:var(--bg-tertiary); border:1px solid var(--border-primary); color:var(--text-secondary); padding:8px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; text-decoration:none; transition:0.2s; }
+    .hbtn:hover { border-color:var(--primary); color:var(--primary); }
+
+    /* Tables Grid */
+    .tables-section { padding:24px; }
+    .tables-title { font-size:0.9rem; font-weight:700; color:var(--text-muted); margin-bottom:16px; text-transform:uppercase; letter-spacing:0.05em; }
+    .tables-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; }
+
+    /* Table Card */
+    .tcard { background:var(--bg-secondary); border:2px solid var(--border-primary); border-radius:16px; padding:20px; transition:0.3s; position:relative; overflow:hidden; }
+    .tcard.occupied { border-color:var(--orange); }
+    .tcard-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+    .tcard-name { font-weight:700; font-size:1rem; }
+    .tcard-cap { font-size:0.72rem; color:var(--text-muted); }
+    .tcard-status { font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:20px; text-transform:uppercase; }
+    .tcard-status.empty { background:rgba(34,197,94,0.12); color:var(--green); }
+    .tcard-status.occupied { background:rgba(249,115,22,0.12); color:var(--orange); }
+    .tcard.ready { border-color:var(--green); box-shadow:0 0 20px rgba(34,197,94,0.2); }
+    @keyframes readyPulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+    .tcard-info { margin:12px 0; font-size:0.8rem; color:var(--text-muted); }
+    .tcard-total { font-size:1.3rem; font-weight:800; color:var(--primary); }
+    .tcard-orders { font-size:0.72rem; color:var(--text-muted); margin-top:2px; }
+    .tcard-btns { display:flex; gap:8px; margin-top:14px; }
+    .tcard-btn { flex:1; padding:10px 8px; border:none; border-radius:10px; font-size:0.78rem; font-weight:700; cursor:pointer; transition:0.2s; }
+    .tcard-btn:hover { filter:brightness(1.1); transform:translateY(-1px); }
+    .btn-order { background:var(--primary); color:#fff; }
+    .btn-close-table { background:var(--bg-tertiary); color:var(--text-secondary); border:1px solid var(--border-primary) !important; }
+    .btn-close-table:hover { border-color:var(--red) !important; color:var(--red); }
+
+    /* ── Order Panel (fullscreen overlay) ── */
+    .order-panel { position:fixed; inset:0; background:var(--bg-primary); z-index:50; display:none; flex-direction:column; }
+    .order-panel.active { display:flex; }
+    .op-header { background:var(--bg-secondary); border-bottom:1px solid var(--border-primary); padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
+    .op-header h2 { font-size:0.95rem; font-weight:700; }
+    .op-header h2 span { color:var(--primary); }
+    .op-body { flex:1; display:flex; overflow:hidden; }
+    .op-menu { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    .op-cats { display:flex; gap:6px; padding:10px 16px; overflow-x:auto; background:var(--bg-secondary); border-bottom:1px solid var(--border-primary); flex-shrink:0; }
+    .op-cat { padding:8px 16px; border-radius:20px; border:1px solid var(--border-primary); background:var(--bg-tertiary); color:var(--text-secondary); cursor:pointer; font-size:0.78rem; font-weight:600; white-space:nowrap; transition:0.2s; }
+    .op-cat.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .op-products { flex:1; overflow-y:auto; padding:16px; display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; align-content:start; }
+    .op-prod { background:var(--bg-secondary); border:1px solid var(--border-primary); border-radius:12px; padding:14px 10px; text-align:center; cursor:pointer; transition:0.2s; }
+    .op-prod:hover { border-color:var(--primary); transform:translateY(-2px); }
+    .op-prod:active { transform:scale(0.97); }
+    .op-prod-icon { font-size:1.5rem; margin-bottom:6px; }
+    .op-prod-name { font-size:0.78rem; font-weight:600; margin-bottom:4px; line-height:1.2; }
+    .op-prod-price { font-size:0.82rem; font-weight:800; color:var(--primary); }
+
+    /* Cart sidebar */
+    .op-cart { width:320px; background:var(--bg-secondary); border-left:1px solid var(--border-primary); display:flex; flex-direction:column; flex-shrink:0; }
+    .op-cart-header { padding:14px 16px; border-bottom:1px solid var(--border-primary); font-weight:700; font-size:0.85rem; }
+    .op-cart-items { flex:1; overflow-y:auto; padding:8px; }
+    .op-cart-empty { text-align:center; color:var(--text-muted); padding:40px 16px; font-size:0.85rem; }
+    .ci { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border-primary); }
+    .ci-info { flex:1; min-width:0; }
+    .ci-name { font-size:0.8rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ci-price { font-size:0.72rem; color:var(--text-muted); }
+    .ci-qty { display:flex; align-items:center; gap:4px; }
+    .ci-qty button { width:24px; height:24px; border-radius:6px; border:1px solid var(--border-primary); background:var(--bg-tertiary); color:var(--text-primary); cursor:pointer; font-size:0.8rem; display:flex; align-items:center; justify-content:center; }
+    .ci-qty span { font-size:0.82rem; font-weight:700; min-width:20px; text-align:center; }
+    .ci-del { background:none; border:none; color:var(--red); cursor:pointer; font-size:0.9rem; padding:4px; }
+    .op-cart-footer { padding:14px 16px; border-top:1px solid var(--border-primary); }
+    .op-cart-total { display:flex; justify-content:space-between; font-size:1rem; font-weight:800; margin-bottom:12px; }
+    .op-cart-total span:last-child { color:var(--primary); }
+    .op-save-btn { width:100%; padding:14px; border:none; border-radius:12px; background:var(--green); color:#fff; font-size:0.9rem; font-weight:700; cursor:pointer; transition:0.2s; }
+    .op-save-btn:hover { filter:brightness(1.1); }
+    .op-save-btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+    /* Delivery info in cart */
+    .del-info { padding:12px; background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.15); border-radius:10px; margin:8px; display:none; }
+    .del-info.visible { display:block; }
+    .del-info-title { font-size:0.78rem; font-weight:700; color:var(--primary); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .del-field { margin-bottom:8px; }
+    .del-field label { font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:3px; font-weight:600; }
+    .del-field input, .del-field textarea { width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border-primary); background:var(--bg-primary); color:var(--text-primary); font-size:0.8rem; outline:none; font-family:inherit; }
+    .del-field input:focus, .del-field textarea:focus { border-color:var(--primary); }
+    .del-field textarea { resize:none; }
+    .del-addr-result { font-size:0.68rem; color:var(--green); margin-top:3px; }
+
+    /* Paket table badge */
+    .tcard.paket-table { border-color:rgba(168,85,247,0.4); background:linear-gradient(135deg, rgba(168,85,247,0.08), rgba(139,92,246,0.15)); }
+    .tcard.paket-table .tcard-icon { background:rgba(168,85,247,0.15); }
+    .tcard.paket-table .tcard-name { color:#c4b5fd; }
+    .paket-badge { position:absolute; top:8px; right:8px; background:linear-gradient(135deg,#8b5cf6,#a855f7); color:#fff; font-size:0.6rem; padding:3px 10px; border-radius:8px; font-weight:700; letter-spacing:0.5px; }
+
+    /* ── Close Table Modal ── */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100; }
+    .modal-overlay.active { display:flex; }
+    .modal { background:var(--bg-secondary); border:1px solid var(--border-primary); border-radius:16px; width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .modal-header { padding:20px 24px; border-bottom:1px solid var(--border-primary); display:flex; justify-content:space-between; align-items:center; }
+    .modal-header h3 { font-size:1rem; font-weight:700; }
+    .modal-body { padding:24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border-primary); display:flex; gap:8px; flex-wrap:wrap; }
+    .close-btn { background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer; }
+    .bill-item { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-primary); font-size:0.85rem; }
+    .bill-total { display:flex; justify-content:space-between; padding:14px 0 0; font-size:1.2rem; font-weight:800; }
+    .bill-total span:last-child { color:var(--primary); }
+    .pay-btn { flex:1; padding:14px 16px; border:none; border-radius:10px; font-size:0.85rem; font-weight:700; cursor:pointer; transition:0.2s; min-width:120px; }
+    .pay-btn:hover { filter:brightness(1.1); }
+    .pay-cash { background:var(--green); color:#fff; }
+    .pay-card { background:#3b82f6; color:#fff; }
+    .pay-print { background:var(--bg-tertiary); color:var(--text-secondary); border:1px solid var(--border-primary); }
+    .pay-cancel { background:var(--bg-tertiary); color:var(--text-muted); border:1px solid var(--border-primary); }
+
+    .toast-container { position:fixed; top:20px; right:20px; z-index:200; display:flex; flex-direction:column; gap:8px; }
+    .toast { padding:12px 20px; border-radius:10px; font-size:0.85rem; font-weight:600; animation:slideIn 0.3s; }
+    .toast-success { background:var(--green); color:#fff; }
+    .toast-error { background:var(--red); color:#fff; }
+    .toast-exit { opacity:0; transition:0.3s; }
+    @keyframes slideIn { from { transform:translateX(100px); opacity:0; } }
+    .footer { text-align:center; padding:16px; color:var(--text-muted); font-size:0.72rem; }
+    .footer a { color:var(--primary); text-decoration:none; }
+
+    @media (max-width:768px) {
+      .op-cart { width:100%; position:fixed; bottom:0; left:0; right:0; height:45vh; border-left:none; border-top:1px solid var(--border-primary); z-index:60; display:none; }
+      .op-cart.mobile-open { display:flex; }
+      .mobile-cart-toggle { display:flex !important; }
+      .tables-grid { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
+    }
+    @media (min-width:769px) {
+      .mobile-cart-toggle { display:none !important; }
+    }
+  </style>
 </head>
 <body>
-  <div class="order-page" id="order-page">
-    <!-- Header -->
-    <header class="order-header">
-      <div class="order-header-left">
-        <div class="order-logo">🍽️ Webyaz <span>Restaurant</span></div>
-        <div class="order-table-badge" id="table-badge">Masa Yükleniyor...</div>
+
+  <!-- ═══ MAIN: Tables View ═══ -->
+  <div id="tables-view">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>🍽️ Webyaz <span>Restaurant</span></h1>
       </div>
-      <button class="cart-btn" id="cart-toggle" onclick="toggleCart()">
-        🛒
-        <span class="cart-count" id="cart-count">0</span>
-      </button>
-    </header>
-
-    <!-- Categories -->
-    <div class="category-tabs" id="category-tabs"></div>
-
-    <!-- Products -->
-    <div class="products-container">
-      <div class="product-grid" id="product-grid"></div>
-      <div class="empty-state hidden" id="products-empty">
-        <div class="empty-state-icon">🔍</div>
-        <div class="empty-state-text">Bu kategoride ürün bulunamadı</div>
+      <div class="header-btns">
+        <a href="/" class="hbtn">← Ana Sayfa</a>
+        <button onclick="fetch('/api/auth/logout',{method:'POST'}).then(()=>location.href='/login.html')" class="hbtn">🚪 Çıkış</button>
       </div>
     </div>
+    <div class="tables-section">
+      <div class="tables-title">📋 Masa seçin → Sipariş alın</div>
+      <div class="tables-grid" id="tables-grid"></div>
+    </div>
+    <div class="footer">Yazılım Geliştirici: <a href="https://webyaz.com.tr" target="_blank">webyaz.com.tr</a></div>
+  </div>
 
-    <!-- Cart Sidebar -->
-    <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
-    <div class="cart-sidebar" id="cart-sidebar">
-      <div class="cart-header">
-        <h3>🛒 Sepetim</h3>
-        <button class="cart-close" onclick="toggleCart()">&times;</button>
+  <!-- ═══ ORDER PANEL (fullscreen) ═══ -->
+  <div class="order-panel" id="order-panel">
+    <div class="op-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="closeOrderPanel()" class="hbtn">← Masalar</button>
+        <h2>🪑 <span id="op-table-name">Masa</span> — Sipariş Al</h2>
       </div>
-      <div class="cart-items" id="cart-items">
-        <div class="empty-state" id="cart-empty">
-          <div class="empty-state-icon">🛒</div>
-          <div class="empty-state-text">Sepetiniz boş</div>
-          <div class="empty-state-subtext">Menüden ürün ekleyin</div>
-        </div>
-      </div>
-      <div class="cart-footer" id="cart-footer" style="display:none">
-        <div class="cart-total">
-          <span>Toplam</span>
-          <span class="cart-total-amount" id="cart-total">₺0</span>
-        </div>
-        <button class="btn btn-primary btn-lg w-full" onclick="showCheckout()">Sipariş Ver</button>
+      <div style="display:flex;gap:8px">
+        <button class="hbtn mobile-cart-toggle" onclick="toggleMobileCart()">🛒 Sepet</button>
       </div>
     </div>
-
-    <!-- Checkout Modal -->
-    <div class="modal-overlay" id="checkout-modal">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>📋 Sipariş Bilgileri</h3>
-          <button class="cart-close" onclick="closeCheckout()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Ad Soyad *</label>
-            <input type="text" class="form-input" id="customer-name" placeholder="Adınız Soyadınız" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Telefon *</label>
-            <input type="tel" class="form-input" id="customer-phone" placeholder="05XX XXX XX XX" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Masa</label>
-            <input type="text" class="form-input" id="customer-table" readonly>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Sipariş Notu (Opsiyonel)</label>
-            <textarea class="form-textarea" id="customer-notes" placeholder="Özel istekleriniz..."></textarea>
-          </div>
-          <div class="card" style="margin-top:16px">
-            <h4 style="margin-bottom:12px">Sipariş Özeti</h4>
-            <div id="checkout-items"></div>
-            <div class="cart-total" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-primary)">
-              <span>Toplam</span>
-              <span class="cart-total-amount" id="checkout-total">₺0</span>
+    <div class="op-body">
+      <div class="op-menu">
+        <div class="op-cats" id="op-cats"></div>
+        <div class="op-products" id="op-products"></div>
+      </div>
+      <div class="op-cart" id="op-cart">
+        <div class="op-cart-header">🛒 Sepet</div>
+        <!-- Delivery Info (only visible for Paket tables) -->
+        <div class="del-info" id="del-info">
+          <div class="del-info-title">📦 Paket Sipariş Bilgileri</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div class="del-field">
+              <label>Ad Soyad *</label>
+              <input type="text" id="del-name" placeholder="Müşteri adı">
+            </div>
+            <div class="del-field">
+              <label>Telefon *</label>
+              <input type="tel" id="del-phone" placeholder="05XX XXX XX XX">
             </div>
           </div>
+          <div class="del-field">
+            <label>Adres *</label>
+            <textarea id="del-address" rows="2" placeholder="Mahalle, Sokak, No..."></textarea>
+            <div id="del-addr-result" class="del-addr-result"></div>
+          </div>
+          <div class="del-field">
+            <label>Not</label>
+            <input type="text" id="del-notes" placeholder="Özel istekler...">
+          </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeCheckout()">Geri</button>
-          <button class="btn btn-success btn-lg" onclick="submitOrder()" id="submit-order-btn">✓ Siparişi Onayla</button>
+        <div class="op-cart-items" id="op-cart-items">
+          <div class="op-cart-empty">Ürün seçin</div>
+        </div>
+        <div class="op-cart-footer">
+          <div class="op-cart-total"><span>Toplam</span><span id="op-total">₺0</span></div>
+          <button class="op-save-btn" id="op-save-btn" onclick="saveOrder()">✓ Siparişi Kaydet</button>
+          <button id="op-close-panel-btn" onclick="forceClosePanel()" style="display:none;width:100%;padding:10px;border:none;border-radius:12px;background:var(--bg-hover);color:var(--text-secondary);font-size:0.85rem;font-weight:600;cursor:pointer;margin-top:6px;transition:0.2s">✕ Paneli Kapat</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Success Overlay -->
-    <div class="order-confirm-overlay" id="success-overlay">
-      <div class="order-success">
-        <div class="order-success-icon">✅</div>
-        <h2>Siparişiniz Alındı!</h2>
-        <p>Siparişiniz mutfağa iletildi. Kısa sürede hazır olacaktır.</p>
-        <div class="order-number" id="order-number">#0</div>
-        <br>
-        <button class="btn btn-primary btn-lg" onclick="newOrder()">Yeni Sipariş Ver</button>
+  <!-- ═══ CLOSE TABLE MODAL ═══ -->
+  <div class="modal-overlay" id="close-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="close-modal-title">Masa Hesabı</h3>
+        <button class="close-btn" onclick="closeCloseModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="bill-items"></div>
+        <div class="bill-total"><span>TOPLAM</span><span id="bill-total">₺0</span></div>
+      </div>
+      <div class="modal-footer">
+        <button class="pay-btn pay-cash" onclick="payTable('cash')">💵 Nakit</button>
+        <button class="pay-btn pay-card" onclick="payTable('card')">💳 Kredi Kartı</button>
+        <button class="pay-btn pay-print" onclick="printBill()">🖨️ Yazdır</button>
+        <button class="pay-btn pay-cancel" onclick="closeCloseModal()">İptal</button>
       </div>
     </div>
   </div>
@@ -114,6 +236,5 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/order.js"></script>
-  <footer class="dev-footer">Yazılım Geliştirici: <a href="https://webyaz.com.tr" target="_blank">webyaz.com.tr</a></footer>
 </body>
 </html>

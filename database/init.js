@@ -3,21 +3,39 @@ const path = require('path');
 const fs = require('fs');
 
 const DB_PATH = path.join(__dirname, 'restaurant.db');
+const BACKUP_DIR = path.join(__dirname, 'backups');
+const DB_VERSION = 7; // Increment this when adding new migrations
 
 async function initDatabase() {
   const SQL = await initSqlJs();
   let db;
+  let isExisting = false;
 
   // Load existing DB or create new
   if (fs.existsSync(DB_PATH)) {
     const buffer = fs.readFileSync(DB_PATH);
     db = new SQL.Database(buffer);
+    isExisting = true;
+
+    // Auto-backup on startup (keep last 10)
+    autoBackup(buffer);
   } else {
     db = new SQL.Database();
   }
 
   // Enable foreign keys
   db.run('PRAGMA foreign_keys = ON');
+
+  // ── Migration System ──────────────────────────────────────
+  db.run(`CREATE TABLE IF NOT EXISTS db_meta (key TEXT PRIMARY KEY, value TEXT)`);
+  const verRow = getOne(db, "SELECT value FROM db_meta WHERE key = 'db_version'");
+  const currentVersion = verRow ? parseInt(verRow.value) : 0;
+
+  if (isExisting && currentVersion < DB_VERSION) {
+    console.log(`🔄 Veritabanı güncelleniyor: v${currentVersion} → v${DB_VERSION}`);
+    runMigrations(db, currentVersion);
+  }
+  db.run("INSERT OR REPLACE INTO db_meta (key, value) VALUES ('db_version', ?)", [String(DB_VERSION)]);
 
   // ── Create Tables ────────────────────────────────────────
   db.run(`
@@ -37,6 +55,7 @@ async function initDatabase() {
       name TEXT NOT NULL,
       description TEXT DEFAULT '',
       price REAL NOT NULL DEFAULT 0,
+      cost_price REAL DEFAULT 0,
       category_id INTEGER,
       image_path TEXT DEFAULT '',
       is_active INTEGER DEFAULT 1,
@@ -66,10 +85,16 @@ async function initDatabase() {
       customer_name TEXT NOT NULL,
       customer_phone TEXT NOT NULL,
       delivery_address TEXT DEFAULT '',
+      delivery_lat REAL DEFAULT 0,
+      delivery_lng REAL DEFAULT 0,
+      courier_id INTEGER DEFAULT NULL,
+      courier_name TEXT DEFAULT '',
       status TEXT DEFAULT 'pending',
       notes TEXT DEFAULT '',
       total_amount REAL DEFAULT 0,
       payment_method TEXT DEFAULT '',
+      receipt_no TEXT DEFAULT '',
+      delivered_by TEXT DEFAULT '',
       paid_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -85,12 +110,28 @@ async function initDatabase() {
       product_name TEXT NOT NULL,
       quantity INTEGER DEFAULT 1,
       unit_price REAL NOT NULL,
+      cost_price REAL DEFAULT 0,
       total_price REAL NOT NULL,
       notes TEXT DEFAULT '',
       status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS product_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      table_id INTEGER,
+      rating INTEGER NOT NULL DEFAULT 5,
+      comment TEXT DEFAULT '',
+      customer_name TEXT DEFAULT 'Misafir',
+      customer_phone TEXT NOT NULL DEFAULT '',
+      is_approved INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     )
   `);
 
@@ -110,6 +151,177 @@ async function initDatabase() {
       role TEXT NOT NULL DEFAULT 'waiter',
       is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // ── Staff / Personel ──────────────────────────────────────
+  db.run(`
+    CREATE TABLE IF NOT EXISTS staff (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      phone TEXT DEFAULT '',
+      position TEXT DEFAULT '',
+      salary REAL DEFAULT 0,
+      start_date TEXT DEFAULT '',
+      tc_no TEXT DEFAULT '',
+      address TEXT DEFAULT '',
+      emergency_contact TEXT DEFAULT '',
+      is_active INTEGER DEFAULT 1,
+      notes TEXT DEFAULT '',
+      photo TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS staff_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      staff_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      amount REAL NOT NULL DEFAULT 0,
+      description TEXT DEFAULT '',
+      date TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
+    )
+  `);
+
+  // ── Cash Register / Kasa Açılış-Kapanış ───────────────────
+
+  // ── Cari Hesaplar ─────────────────────────────────────────
+  db.run(`
+    CREATE TABLE IF NOT EXISTS accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT DEFAULT 'customer',
+      phone TEXT DEFAULT '',
+      address TEXT DEFAULT '',
+      tax_no TEXT DEFAULT '',
+      balance REAL DEFAULT 0,
+      notes TEXT DEFAULT '',
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS account_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      account_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      amount REAL NOT NULL DEFAULT 0,
+      description TEXT DEFAULT '',
+      date TEXT NOT NULL,
+      order_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS cash_register (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      opened_by TEXT DEFAULT '',
+      closed_by TEXT DEFAULT '',
+      opening_amount REAL DEFAULT 0,
+      closing_amount REAL DEFAULT 0,
+      expected_amount REAL DEFAULT 0,
+      cash_sales REAL DEFAULT 0,
+      card_sales REAL DEFAULT 0,
+      total_sales REAL DEFAULT 0,
+      total_orders INTEGER DEFAULT 0,
+      difference REAL DEFAULT 0,
+      notes TEXT DEFAULT '',
+      status TEXT DEFAULT 'open',
+      opened_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      closed_at DATETIME
+    )
+  `);
+
+  // ── Stok / Inventory ──────────────────────────────────────
+  db.run(`
+    CREATE TABLE IF NOT EXISTS inventory_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      unit TEXT DEFAULT 'kg',
+      current_stock REAL DEFAULT 0,
+      min_stock REAL DEFAULT 0,
+      cost_per_unit REAL DEFAULT 0,
+      category TEXT DEFAULT 'Genel',
+      supplier_id INTEGER,
+      notes TEXT DEFAULT '',
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (supplier_id) REFERENCES accounts(id) ON DELETE SET NULL
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS inventory_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id INTEGER NOT NULL,
+      type TEXT NOT NULL DEFAULT 'in',
+      quantity REAL NOT NULL DEFAULT 0,
+      unit_cost REAL DEFAULT 0,
+      total_cost REAL DEFAULT 0,
+      description TEXT DEFAULT '',
+      supplier_id INTEGER,
+      date TEXT NOT NULL,
+      created_by TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+      FOREIGN KEY (supplier_id) REFERENCES accounts(id) ON DELETE SET NULL
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS product_recipes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      item_id INTEGER NOT NULL,
+      quantity REAL NOT NULL DEFAULT 0,
+      unit TEXT DEFAULT 'kg',
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE
+    )
+  `);
+
+  // ── Rezervasyonlar ─────────────────────────────────────────
+  db.run(`
+    CREATE TABLE IF NOT EXISTS reservations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      table_id INTEGER,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT DEFAULT '',
+      guest_count INTEGER DEFAULT 2,
+      date TEXT NOT NULL,
+      time TEXT NOT NULL,
+      duration INTEGER DEFAULT 120,
+      status TEXT DEFAULT 'pending',
+      notes TEXT DEFAULT '',
+      created_by TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (table_id) REFERENCES tables_info(id) ON DELETE SET NULL
+    )
+  `);
+
+  // ── Giderler ──────────────────────────────────────────────
+  db.run(`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT NOT NULL DEFAULT 'Genel',
+      description TEXT DEFAULT '',
+      amount REAL NOT NULL DEFAULT 0,
+      payment_method TEXT DEFAULT 'cash',
+      date TEXT NOT NULL,
+      supplier_id INTEGER,
+      receipt_no TEXT DEFAULT '',
+      notes TEXT DEFAULT '',
+      is_recurring INTEGER DEFAULT 0,
+      created_by TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (supplier_id) REFERENCES accounts(id) ON DELETE SET NULL
     )
   `);
 
@@ -228,4 +440,131 @@ function saveDatabase(db) {
   fs.writeFileSync(DB_PATH, buffer);
 }
 
-module.exports = { initDatabase, saveDatabase, DB_PATH };
+// ── Helper: query one row ────────────────────────────────────
+function getOne(db, sql, params = []) {
+  const stmt = db.prepare(sql);
+  if (params.length) stmt.bind(params);
+  if (stmt.step()) {
+    const cols = stmt.getColumnNames();
+    const vals = stmt.get();
+    stmt.free();
+    const row = {};
+    cols.forEach((c, i) => { row[c] = vals[i]; });
+    return row;
+  }
+  stmt.free();
+  return null;
+}
+
+// ── Auto Backup ──────────────────────────────────────────────
+function autoBackup(buffer) {
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const backupFile = path.join(BACKUP_DIR, `restaurant_${ts}.db`);
+    fs.writeFileSync(backupFile, buffer);
+
+    // Keep only last 10 backups
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith('restaurant_') && f.endsWith('.db'))
+      .sort().reverse();
+    files.slice(10).forEach(f => {
+      try { fs.unlinkSync(path.join(BACKUP_DIR, f)); } catch (e) {}
+    });
+
+    console.log(`💾 Otomatik yedek alındı: ${path.basename(backupFile)}`);
+  } catch (e) {
+    console.error('⚠️ Yedekleme hatası:', e.message);
+  }
+}
+
+// ── Manual Backup (called from API) ──────────────────────────
+function createManualBackup() {
+  if (!fs.existsSync(DB_PATH)) return null;
+  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const name = `manual_${ts}.db`;
+  fs.copyFileSync(DB_PATH, path.join(BACKUP_DIR, name));
+  return name;
+}
+
+function listBackups() {
+  if (!fs.existsSync(BACKUP_DIR)) return [];
+  return fs.readdirSync(BACKUP_DIR)
+    .filter(f => f.endsWith('.db'))
+    .map(f => {
+      const stats = fs.statSync(path.join(BACKUP_DIR, f));
+      return { name: f, size: stats.size, date: stats.mtime };
+    })
+    .sort((a, b) => b.date - a.date);
+}
+
+function restoreBackup(filename) {
+  const src = path.join(BACKUP_DIR, filename);
+  if (!fs.existsSync(src)) throw new Error('Yedek dosyası bulunamadı');
+  // Backup current before restoring
+  const current = fs.readFileSync(DB_PATH);
+  autoBackup(current);
+  fs.copyFileSync(src, DB_PATH);
+  return true;
+}
+
+// ── Migrations ───────────────────────────────────────────────
+// Add new migrations here. Each migration runs only once.
+// The `fromVersion` is checked so only new migrations run.
+function runMigrations(db, fromVersion) {
+  const safeAddColumn = (table, column, type, def) => {
+    try { db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type} DEFAULT ${def}`); }
+    catch (e) { /* column already exists, skip */ }
+  };
+
+  // v0 → v1: Initial schema (handled by CREATE TABLE IF NOT EXISTS)
+
+  // v1 → v2: cost_price, staff, cash_register
+  if (fromVersion < 2) {
+    safeAddColumn('products', 'cost_price', 'REAL', '0');
+    safeAddColumn('order_items', 'cost_price', 'REAL', '0');
+    safeAddColumn('orders', 'courier_id', 'INTEGER', 'NULL');
+    safeAddColumn('orders', 'courier_name', 'TEXT', "''");
+    safeAddColumn('orders', 'delivered_by', 'TEXT', "''");
+    console.log('  ✅ v2: cost_price, staff, cash_register tabloları eklendi');
+  }
+
+  // v2 → v3: staff photo
+  if (fromVersion < 3) {
+    safeAddColumn('staff', 'photo', 'TEXT', "''");
+    console.log('  ✅ v3: personel fotoğraf sütunu eklendi');
+  }
+
+  // v3 → v4: cari hesaplar
+  if (fromVersion < 4) {
+    // Tables are created via CREATE TABLE IF NOT EXISTS
+    console.log('  ✅ v4: cari hesap tabloları eklendi');
+  }
+
+  // v4 → v5: stok yönetimi
+  if (fromVersion < 5) {
+    // Tables are created via CREATE TABLE IF NOT EXISTS
+    console.log('  ✅ v5: stok yönetimi tabloları eklendi (inventory_items, inventory_transactions, product_recipes)');
+  }
+
+  // v5 → v6: rezervasyonlar
+  if (fromVersion < 6) {
+    // Tables are created via CREATE TABLE IF NOT EXISTS
+    console.log('  ✅ v6: rezervasyon tablosu eklendi');
+  }
+
+  // v6 → v7: gider yönetimi
+  if (fromVersion < 7) {
+    // Tables are created via CREATE TABLE IF NOT EXISTS
+    console.log('  ✅ v7: gider tablosu eklendi');
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Yeni migration eklerken: DB_VERSION artır + yeni blok ekle
+  // ────────────────────────────────────────────────────────────
+
+  console.log('✅ Veritabanı güncelleme tamamlandı!');
+}
+
+module.exports = { initDatabase, saveDatabase, DB_PATH, BACKUP_DIR, createManualBackup, listBackups, restoreBackup };

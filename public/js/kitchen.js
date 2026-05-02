@@ -136,29 +136,32 @@ function updateStats() {
 }
 
 // ── Status Update ────────────────────────────────────────────
-async function updateStatus(orderId, status) {
+async function updateStatus(orderId, newStatus) {
   try {
     const res = await fetch(`/api/orders/${orderId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status: newStatus }),
     });
-    const order = await res.json();
-    
-    socket.emit('order_status_update', { order_id: orderId, status, order });
-    
-    if (status === 'delivered') {
-      orders = orders.filter(o => o.id !== orderId);
-    } else {
-      const idx = orders.findIndex(o => o.id === orderId);
-      if (idx >= 0) orders[idx] = order;
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('Status update failed:', res.status, err);
+      showToast('Durum güncellenemedi: ' + (res.status === 401 ? 'Oturum süresi dolmuş, sayfayı yenileyin' : err), 'error');
+      return;
     }
-    
-    renderOrders();
-    updateStats();
-    showToast(`Sipariş #${orderId}: ${statusText(status)}`, 'success');
+
+    const order = await res.json();
+    socket.emit('order_status_update', { order_id: orderId, status: newStatus, order });
+
+    showToast(`Sipariş #${orderId}: ${statusText(newStatus)}`, 'success');
+
+    // Reload all orders to get fresh data
+    await loadOrders();
   } catch (e) {
-    showToast('Durum güncellenemedi', 'error');
+    console.error('Status update error:', e);
+    showToast('Bağlantı hatası, sayfa yenileniyor...', 'error');
+    setTimeout(() => loadOrders(), 1000);
   }
 }
 
@@ -220,15 +223,13 @@ socket.on('new_order', (order) => {
   }, 100);
 });
 
-socket.on('order_status_update', (data) => {
-  const idx = orders.findIndex(o => o.id === data.order_id);
-  if (data.status === 'delivered' || data.status === 'paid' || data.status === 'cancelled') {
-    orders = orders.filter(o => o.id !== data.order_id);
-  } else if (idx >= 0 && data.order) {
-    orders[idx] = data.order;
+socket.on('order_status_update', async (data) => {
+  console.log('📡 Status update:', data.order_id, data.status);
+  if (data.status === 'delivered') {
+    showToast(`✅ Sipariş #${data.order_id} teslim alındı`, 'success');
   }
-  renderOrders();
-  updateStats();
+  // Always reload from API for accurate data
+  await loadOrders();
 });
 
 // ── Toast ────────────────────────────────────────────────────

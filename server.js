@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const PORT = process.env.PORT || 3000;
 const VIEWS = path.join(__dirname, 'views');
-const LICENSE_SERVER = process.env.LICENSE_SERVER_URL || 'http://localhost:4000';
+const LICENSE_SERVER = process.env.LICENSE_SERVER_URL || 'https://webyaz.com.tr';
 
 // ── Middleware ──────────────────────────────────────────────
 app.use(express.json());
@@ -44,7 +44,7 @@ async function boot() {
   async function verifyLicense(key) {
     if (!key) return { valid: false, status: 'no_key' };
     try {
-      const res = await fetch(LICENSE_SERVER + '/api/license/verify', {
+      const res = await fetch(LICENSE_SERVER + '/wp-json/webyaz/v1/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ license_key: key })
@@ -92,6 +92,8 @@ async function boot() {
 
   // License middleware for page routes
   function requireLicense(req, res, next) {
+    // Demo mode: skip license check (for Render/demo deployments)
+    if (process.env.DEMO_MODE === 'true') return next();
     const key = getLicenseKey();
     if (!key) return res.redirect('/license.html');
     if (!licenseCache.valid && licenseCache.status !== 'offline_grace') {
@@ -192,6 +194,11 @@ async function boot() {
     res.sendFile(path.join(VIEWS, 'admin.html'));
   });
 
+  // Public menu (QR Code - no auth required, but license required)
+  app.get('/menu/:tableId', requireLicense, (req, res) => {
+    res.sendFile(path.join(VIEWS, 'menu.html'));
+  });
+
   app.get('/admin', page(['admin'], 'admin.html'));
   app.get('/order/:tableId?', page(['admin', 'waiter', 'cashier'], 'order.html'));
   app.get('/kitchen', page(['admin', 'kitchen'], 'kitchen.html'));
@@ -213,6 +220,25 @@ async function boot() {
     socket.on('order_paid', (d) => io.emit('order_paid', d));
   });
 
+  // ── Local IP Detection ──────────────────────────────────────
+  function getLocalIP() {
+    const os = require('os');
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]) {
+        if (net.family === 'IPv4' && !net.internal) return net.address;
+      }
+    }
+    return 'localhost';
+  }
+
+  const LOCAL_IP = getLocalIP();
+
+  // Server info API (for admin panel)
+  app.get('/api/server-info', (req, res) => {
+    res.json({ ip: LOCAL_IP, port: PORT, url: `http://${LOCAL_IP}:${PORT}` });
+  });
+
   // ── Start Server ─────────────────────────────────────────
   const HOST = process.env.HOST || '0.0.0.0';
   server.listen(PORT, HOST, () => {
@@ -220,15 +246,18 @@ async function boot() {
     console.log('╔══════════════════════════════════════════════════════╗');
     console.log('║     🍽️  Webyaz Restaurant Otomasyon Sistemi          ║');
     console.log('╠══════════════════════════════════════════════════════╣');
-    console.log(`║  🌐 http://localhost:${PORT}                            ║`);
+    console.log(`║  🌐 Bu Bilgisayar →  http://localhost:${PORT}          ║`);
+    console.log(`║  📡 Ağ Erişim     →  http://${LOCAL_IP}:${PORT}       ║`);
     console.log('╠══════════════════════════════════════════════════════╣');
     console.log(`║  🔐 Giriş        →  /login.html                     ║`);
     console.log(`║  👨‍💼 Admin Panel  →  /admin                          ║`);
     console.log(`║  📱 Sipariş      →  /order/1                        ║`);
-    console.log(`║  📦 Paket Servis →  /delivery                       ║`);
+    console.log(`║  📦 Paket Takip  →  /delivery                       ║`);
     console.log(`║  👨‍🍳 Mutfak      →  /kitchen                        ║`);
     console.log(`║  💰 Kasa         →  /cashier                        ║`);
     console.log(`║  ⚙️  Kurulum     →  /setup                          ║`);
+    console.log('╠══════════════════════════════════════════════════════╣');
+    console.log(`║  📱 Garson/Tablet: http://${LOCAL_IP}:${PORT}         ║`);
     console.log('╚══════════════════════════════════════════════════════╝');
     console.log('');
   });

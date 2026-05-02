@@ -11,7 +11,13 @@
   <div class="cashier-page">
     <header class="cashier-header">
       <div class="cashier-header-left">
+        <a href="/" style="text-decoration:none;color:var(--text-primary);display:flex;align-items:center;gap:6px;font-size:0.85rem;padding:8px 14px;border-radius:8px;background:var(--bg-tertiary);border:1px solid var(--border-primary)">← Geri</a>
         <div class="cashier-title">💰 Kasa <span>Ekranı</span></div>
+        <div id="register-status-badge" style="display:none;padding:6px 14px;border-radius:8px;font-size:0.75rem;font-weight:700"></div>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button id="btn-close-register" onclick="openCloseRegisterModal()" style="display:none;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600">🔒 Kasa Kapat</button>
+          <button onclick="fetch('/api/auth/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:var(--bg-tertiary);border:1px solid var(--border-primary);color:var(--text-muted);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem">🚪 Çıkış</button>
+        </div>
       </div>
       <div class="cashier-summary">
         <div class="cashier-summary-item">
@@ -67,6 +73,50 @@
 
   <!-- Receipt (hidden, for print) -->
   <div class="receipt-print" id="receipt-print" style="display:none"></div>
+
+  <!-- Register Open Overlay -->
+  <div id="register-open-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:2000;display:none;align-items:center;justify-content:center">
+    <div class="card" style="max-width:420px;width:90%;padding:40px;text-align:center">
+      <div style="font-size:3rem;margin-bottom:12px">🔓</div>
+      <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:4px">Kasa Açılışı</h2>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:24px">Kasadaki başlangıç tutarını girin</p>
+      <div class="form-group">
+        <label class="form-label">Kasadaki Nakit (₺)</label>
+        <input type="number" class="form-input" id="register-opening" step="0.01" value="0" style="text-align:center;font-size:1.5rem;font-weight:700;padding:14px">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Not (opsiyonel)</label>
+        <input type="text" class="form-input" id="register-open-note" placeholder="Vardiya notu...">
+      </div>
+      <button class="btn btn-success btn-lg" onclick="openRegister()" style="width:100%;margin-top:8px;font-size:1rem">✅ Kasayı Aç</button>
+    </div>
+  </div>
+
+  <!-- Register Close Modal -->
+  <div class="modal-overlay" id="register-close-modal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h3>🔒 Kasa Kapanışı</h3>
+        <button class="cart-close" onclick="closeCloseRegisterModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="register-close-summary" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px"></div>
+        <div class="form-group">
+          <label class="form-label">Kasadaki Gerçek Nakit (₺)</label>
+          <input type="number" class="form-input" id="register-closing" step="0.01" style="text-align:center;font-size:1.3rem;font-weight:700;padding:12px">
+        </div>
+        <div id="register-diff" style="text-align:center;font-size:0.9rem;font-weight:700;padding:8px;border-radius:8px;margin-bottom:12px"></div>
+        <div class="form-group">
+          <label class="form-label">Kapanış Notu</label>
+          <input type="text" class="form-input" id="register-close-note" placeholder="Kapanış notu...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCloseRegisterModal()">İptal</button>
+        <button class="btn btn-danger" onclick="closeRegister()">🔒 Kasayı Kapat</button>
+      </div>
+    </div>
+  </div>
 
   <div class="toast-container" id="toast-container"></div>
 

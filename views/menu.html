@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dijital Menü — Webyaz Restaurant</title>
+  <meta name="description" content="Webyaz Restaurant dijital menü. QR kod ile menüyü görüntüleyin.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#0f0f0f; --bg2:#1a1a1a; --bg3:#252525; --border:#333;
+      --text:#f5f5f5; --text2:#a3a3a3; --text3:#737373;
+      --primary:#f97316; --green:#22c55e; --star:#facc15;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+    /* Header */
+    .menu-header {
+      background:linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding:28px 20px 22px; text-align:center; position:relative; overflow:hidden;
+    }
+    .menu-header::before { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 60%); }
+    .menu-logo { width:64px; height:64px; border-radius:16px; object-fit:cover; margin-bottom:10px; position:relative; z-index:1; border:2px solid rgba(255,255,255,0.15); }
+    .menu-logo-placeholder { width:64px; height:64px; border-radius:16px; background:rgba(249,115,22,0.2); display:inline-flex; align-items:center; justify-content:center; font-size:2rem; margin-bottom:10px; position:relative; z-index:1; border:2px solid rgba(255,255,255,0.15); }
+    .menu-header h1 { font-size:1.3rem; font-weight:800; position:relative; z-index:1; }
+    .menu-header h1 span { color:var(--primary); }
+    .menu-contact { display:flex; gap:12px; justify-content:center; margin-top:8px; flex-wrap:wrap; position:relative; z-index:1; }
+    .menu-contact-item { font-size:0.7rem; color:var(--text2); }
+    .menu-table { display:inline-block; background:rgba(249,115,22,0.15); border:1px solid rgba(249,115,22,0.3); color:var(--primary); padding:6px 16px; border-radius:20px; font-size:0.8rem; font-weight:700; margin-top:10px; position:relative; z-index:1; }
+    .menu-subtitle { color:var(--text2); font-size:0.72rem; margin-top:8px; position:relative; z-index:1; }
+
+    /* Categories */
+    .cats { display:flex; gap:8px; padding:12px 16px; overflow-x:auto; background:var(--bg2); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10; }
+    .cats::-webkit-scrollbar { display:none; }
+    .cat-btn { padding:8px 18px; border-radius:20px; border:1px solid var(--border); background:var(--bg3); color:var(--text2); cursor:pointer; font-size:0.78rem; font-weight:600; white-space:nowrap; transition:0.2s; flex-shrink:0; }
+    .cat-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .cat-btn:active { transform:scale(0.95); }
+
+    /* Products */
+    .products { padding:16px; }
+    .cat-title { font-size:0.85rem; font-weight:700; color:var(--text2); margin:20px 0 12px; text-transform:uppercase; letter-spacing:0.05em; }
+    .cat-title:first-child { margin-top:0; }
+    .product {
+      display:flex; gap:14px; padding:14px; background:var(--bg2); border:1px solid var(--border);
+      border-radius:14px; margin-bottom:10px; transition:0.2s; align-items:center; cursor:pointer;
+    }
+    .product:active { transform:scale(0.98); }
+    .product-img {
+      width:64px; height:64px; border-radius:10px; background:var(--bg3);
+      display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; overflow:hidden;
+    }
+    .product-img img { width:100%; height:100%; object-fit:cover; }
+    .product-info { flex:1; min-width:0; }
+    .product-name { font-weight:700; font-size:0.88rem; margin-bottom:3px; }
+    .product-desc { font-size:0.72rem; color:var(--text3); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .product-rating { display:flex; align-items:center; gap:4px; margin-top:4px; }
+    .product-stars { color:var(--star); font-size:0.7rem; letter-spacing:1px; }
+    .product-rating-text { font-size:0.65rem; color:var(--text3); }
+    .product-right { text-align:right; flex-shrink:0; }
+    .product-price { font-weight:800; font-size:1rem; color:var(--primary); white-space:nowrap; }
+    .product-rate-btn { margin-top:6px; font-size:0.65rem; background:rgba(250,204,21,0.12); color:var(--star); border:1px solid rgba(250,204,21,0.3); padding:3px 10px; border-radius:12px; cursor:pointer; }
+
+    /* Search */
+    .search-bar { padding:12px 16px; background:var(--bg); }
+    .search-input {
+      width:100%; padding:10px 16px 10px 40px; border-radius:12px; border:1px solid var(--border);
+      background:var(--bg2); color:var(--text); font-size:0.85rem; outline:none;
+    }
+    .search-input:focus { border-color:var(--primary); }
+    .search-wrap { position:relative; }
+    .search-icon { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:0.9rem; pointer-events:none; }
+
+    /* Review Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:flex-end; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .review-modal {
+      background:var(--bg2); border-radius:20px 20px 0 0; width:100%; max-width:500px; max-height:85vh;
+      overflow-y:auto; padding:24px; animation:slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+    .review-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .review-modal-title { font-weight:700; font-size:1.05rem; }
+    .review-modal-close { background:none; border:none; color:var(--text2); font-size:1.3rem; cursor:pointer; padding:4px; }
+    .review-product-name { font-size:0.9rem; color:var(--primary); font-weight:600; margin-bottom:16px; }
+
+    /* Star Rating Input */
+    .star-rating { display:flex; gap:8px; justify-content:center; margin:16px 0; }
+    .star-rating .star { font-size:2.2rem; cursor:pointer; transition:0.15s; color:var(--border); }
+    .star-rating .star.active { color:var(--star); transform:scale(1.1); }
+    .star-rating .star:active { transform:scale(0.9); }
+
+    /* Review Form */
+    .review-input { width:100%; padding:12px; border-radius:12px; border:1px solid var(--border); background:var(--bg3); color:var(--text); font-size:0.85rem; resize:none; outline:none; margin-bottom:8px; font-family:inherit; }
+    .review-input:focus { border-color:var(--primary); }
+    .review-name-input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg3); color:var(--text); font-size:0.82rem; outline:none; margin-bottom:12px; font-family:inherit; }
+    .review-submit { width:100%; padding:12px; border-radius:12px; border:none; background:var(--primary); color:#fff; font-weight:700; font-size:0.9rem; cursor:pointer; transition:0.2s; }
+    .review-submit:active { transform:scale(0.97); }
+    .review-submit:disabled { opacity:0.5; cursor:not-allowed; }
+
+    /* Reviews List */
+    .reviews-list { margin-top:20px; }
+    .reviews-title { font-size:0.82rem; font-weight:700; color:var(--text2); margin-bottom:12px; }
+    .review-item { padding:12px; background:var(--bg3); border-radius:10px; margin-bottom:8px; }
+    .review-item-header { display:flex; justify-content:space-between; margin-bottom:4px; }
+    .review-item-name { font-weight:600; font-size:0.78rem; }
+    .review-item-date { font-size:0.65rem; color:var(--text3); }
+    .review-item-stars { color:var(--star); font-size:0.72rem; letter-spacing:1px; }
+    .review-item-comment { font-size:0.78rem; color:var(--text2); margin-top:4px; line-height:1.4; }
+    .no-reviews { text-align:center; color:var(--text3); font-size:0.8rem; padding:20px; }
+
+    /* Footer */
+    .menu-footer { text-align:center; padding:24px 16px 40px; color:var(--text3); font-size:0.72rem; }
+    .menu-footer a { color:var(--primary); text-decoration:none; }
+
+    /* Empty state */
+    .empty { text-align:center; padding:60px 20px; color:var(--text3); }
+    .empty-icon { font-size:2.5rem; margin-bottom:12px; }
+
+    /* Toast */
+    .toast-container { position:fixed; top:16px; right:16px; z-index:200; }
+    .toast { padding:12px 20px; border-radius:10px; margin-bottom:8px; font-size:0.82rem; font-weight:600; animation:fadeIn 0.3s; }
+    .toast-success { background:rgba(34,197,94,0.9); color:#fff; }
+    .toast-error { background:rgba(239,68,68,0.9); color:#fff; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-10px); } }
+    .toast-exit { opacity:0; transition:0.3s; }
+
+    /* Scroll to top */
+    .scroll-top { position:fixed; bottom:20px; right:20px; width:44px; height:44px; border-radius:50%; background:var(--primary); color:#fff; border:none; font-size:1.2rem; cursor:pointer; display:none; z-index:20; box-shadow:0 4px 12px rgba(249,115,22,0.4); }
+    .scroll-top.visible { display:flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+
+  <div class="menu-header" id="menu-header">
+    <div class="menu-logo-placeholder" id="header-logo">🍽️</div>
+    <h1 id="header-name">Restaurant</h1>
+    <div class="menu-contact" id="header-contact"></div>
+    <div class="menu-table" id="table-name">📍 Masa Yükleniyor...</div>
+    <div class="menu-subtitle">Dijital Menü — Ürünlere tıklayarak değerlendirin ⭐</div>
+  </div>
+
+  <div class="cats" id="cats"></div>
+
+  <div class="search-wrap" style="padding:12px 16px">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="search" placeholder="Menüde ara..." oninput="filterProducts()">
+  </div>
+
+  <div class="products" id="products"></div>
+
+  <div class="menu-footer">
+    <div style="margin-bottom:8px">Bizi tercih ettiğiniz için teşekkür ederiz! 🙏</div>
+    Yazılım: <a href="https://webyaz.com.tr" target="_blank">webyaz.com.tr</a>
+  </div>
+
+  <!-- Review Modal -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="review-modal">
+      <div class="review-modal-header">
+        <div class="review-modal-title">⭐ Ürünü Değerlendir</div>
+        <button class="review-modal-close" onclick="closeReviewModal()">✕</button>
+      </div>
+      <div class="review-product-name" id="review-product-name"></div>
+
+      <div class="star-rating" id="star-rating">
+        <span class="star" data-value="1" onclick="setRating(1)">★</span>
+        <span class="star" data-value="2" onclick="setRating(2)">★</span>
+        <span class="star" data-value="3" onclick="setRating(3)">★</span>
+        <span class="star" data-value="4" onclick="setRating(4)">★</span>
+        <span class="star" data-value="5" onclick="setRating(5)">★</span>
+      </div>
+
+      <input type="text" class="review-name-input" id="review-name" placeholder="Adınız" maxlength="50">
+      <input type="tel" class="review-name-input" id="review-phone" placeholder="📱 Telefon numaranız (zorunlu)" maxlength="15" required>
+      <textarea class="review-input" id="review-comment" rows="3" placeholder="Yorumunuz... (opsiyonel)" maxlength="500"></textarea>
+      <div style="font-size:0.7rem;color:var(--text3);margin-bottom:12px;text-align:center">ℹ️ Yorumunuz yönetici onayından sonra yayınlanacaktır</div>
+      <button class="review-submit" id="review-submit" onclick="submitReview()">Değerlendirmeyi Gönder</button>
+
+      <div class="reviews-list" id="reviews-list"></div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+  <button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+  <script>
+    let categories = [];
+    let products = [];
+    let reviewSummary = {};
+    let currentCat = null;
+    let tableId = 1;
+    let selectedProductId = null;
+    let selectedRating = 5;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const parts = window.location.pathname.split('/');
+      tableId = parseInt(parts[parts.length - 1]) || 1;
+
+      // Load restaurant settings
+      try {
+        const settings = await fetch('/api/settings').then(r => r.json());
+        const name = settings.restaurant_name || 'Restaurant';
+        const phone = settings.restaurant_phone || '';
+        const address = settings.restaurant_address || '';
+        const logo = settings.restaurant_logo || '';
+        document.getElementById('header-name').innerHTML = name.includes(' ') ? name.replace(/(\S+)$/, '<span>$1</span>') : name;
+        if (logo) {
+          document.getElementById('header-logo').outerHTML = `<img class="menu-logo" src="${logo}" alt="Logo">`;
+        }
+        let contactHTML = '';
+        if (phone) contactHTML += `<a class="menu-contact-item" href="tel:${phone}" style="color:var(--text2);text-decoration:none">📞 ${phone}</a>`;
+        if (address) contactHTML += `<span class="menu-contact-item">📍 ${address}</span>`;
+        document.getElementById('header-contact').innerHTML = contactHTML;
+      } catch(e) {}
+
+      // Load table info
+      try {
+        const tables = await fetch('/api/tables').then(r => r.json());
+        const table = tables.find(t => t.id === tableId);
+        document.getElementById('table-name').textContent = '📍 ' + (table ? table.name : 'Masa ' + tableId);
+      } catch(e) {}
+
+      // Load menu + reviews
+      try {
+        categories = await fetch('/api/categories').then(r => r.json());
+        products = await fetch('/api/products?active_only=1').then(r => r.json());
+        reviewSummary = await fetch('/api/reviews/summary').then(r => r.json());
+        renderCats();
+        renderProducts();
+      } catch(e) {
+        document.getElementById('products').innerHTML = '<div class="empty"><div class="empty-icon">😕</div>Menü yüklenemedi</div>';
+      }
+
+      window.addEventListener('scroll', () => {
+        document.getElementById('scrollTop').classList.toggle('visible', window.scrollY > 300);
+      });
+    });
+
+    function renderCats() {
+      const container = document.getElementById('cats');
+      const active = categories.filter(c => c.is_active);
+      container.innerHTML = `
+        <button class="cat-btn ${!currentCat ? 'active' : ''}" onclick="selectCat(null)">🍽️ Tümü</button>
+        ${active.map(c => `
+          <button class="cat-btn ${currentCat === c.id ? 'active' : ''}" onclick="selectCat(${c.id})">${c.icon} ${c.name}</button>
+        `).join('')}
+      `;
+    }
+
+    function selectCat(id) {
+      currentCat = id;
+      renderCats();
+      renderProducts();
+      document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function starsHTML(rating, size) {
+      const full = Math.round(rating);
+      return Array.from({length: 5}, (_, i) => i < full ? '★' : '☆').join('');
+    }
+
+    function renderProducts() {
+      const container = document.getElementById('products');
+      const search = (document.getElementById('search').value || '').toLowerCase().trim();
+
+      let filtered = products.filter(p => p.is_active);
+      if (currentCat) filtered = filtered.filter(p => p.category_id === currentCat);
+      if (search) filtered = filtered.filter(p => p.name.toLowerCase().includes(search) || (p.description || '').toLowerCase().includes(search));
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>Ürün bulunamadı</div>';
+        return;
+      }
+
+      if (!currentCat && !search) {
+        const grouped = {};
+        filtered.forEach(p => {
+          const cat = categories.find(c => c.id === p.category_id);
+          const catName = cat ? `${cat.icon} ${cat.name}` : '🍽️ Diğer';
+          if (!grouped[catName]) grouped[catName] = [];
+          grouped[catName].push(p);
+        });
+        container.innerHTML = Object.entries(grouped).map(([catName, items]) => `
+          <div class="cat-title">${catName}</div>
+          ${items.map(p => productCard(p)).join('')}
+        `).join('');
+      } else {
+        container.innerHTML = filtered.map(p => productCard(p)).join('');
+      }
+    }
+
+    function productCard(p) {
+      const cat = categories.find(c => c.id === p.category_id);
+      const icon = cat ? cat.icon : '🍽️';
+      const rev = reviewSummary[p.id];
+      const hasReviews = rev && rev.count > 0;
+      return `
+        <div class="product" onclick="openReviewModal(${p.id}, '${p.name.replace(/'/g, "\\'")}')">
+          <div class="product-img">${p.image_path ? `<img src="${p.image_path}" alt="${p.name}">` : icon}</div>
+          <div class="product-info">
+            <div class="product-name">${p.name}</div>
+            ${p.description ? `<div class="product-desc">${p.description}</div>` : ''}
+            <div class="product-rating">
+              ${hasReviews ? `
+                <span class="product-stars">${starsHTML(rev.avg, 'sm')}</span>
+                <span class="product-rating-text">${rev.avg} (${rev.count})</span>
+              ` : `
+                <span class="product-rating-text">Henüz değerlendirilmedi</span>
+              `}
+            </div>
+          </div>
+          <div class="product-right">
+            <div class="product-price">₺${p.price.toLocaleString('tr-TR')}</div>
+            <button class="product-rate-btn" onclick="event.stopPropagation();openReviewModal(${p.id}, '${p.name.replace(/'/g, "\\'")}')">⭐ Değerlendir</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterProducts() { renderProducts(); }
+
+    // ── Review Modal ──────────────────────────────
+    async function openReviewModal(productId, productName) {
+      selectedProductId = productId;
+      selectedRating = 5;
+      document.getElementById('review-product-name').textContent = productName;
+      document.getElementById('review-comment').value = '';
+      document.getElementById('review-name').value = '';
+      document.getElementById('review-phone').value = '';
+      setRating(5);
+      document.getElementById('reviewModal').classList.add('open');
+
+      // Load existing reviews
+      try {
+        const data = await fetch(`/api/products/${productId}/reviews`).then(r => r.json());
+        renderReviews(data);
+      } catch(e) {
+        document.getElementById('reviews-list').innerHTML = '';
+      }
+    }
+
+    function closeReviewModal() {
+      document.getElementById('reviewModal').classList.remove('open');
+    }
+
+    function setRating(val) {
+      selectedRating = val;
+      document.querySelectorAll('#star-rating .star').forEach(s => {
+        s.classList.toggle('active', +s.dataset.value <= val);
+      });
+    }
+
+    async function submitReview() {
+      if (!selectedProductId) return;
+      const btn = document.getElementById('review-submit');
+      btn.disabled = true;
+      btn.textContent = 'Gönderiliyor...';
+
+      const phone = document.getElementById('review-phone').value.trim();
+      if (!phone || phone.length < 7) {
+        showToast('Lütfen geçerli bir telefon numarası girin', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Değerlendirmeyi Gönder';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: selectedProductId,
+            table_id: tableId,
+            rating: selectedRating,
+            comment: document.getElementById('review-comment').value.trim(),
+            customer_name: document.getElementById('review-name').value.trim() || 'Misafir',
+            customer_phone: phone
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Hata');
+        }
+
+        showToast('Teşekkürler! Yorumunuz onay sonrası yayınlanacaktır ✅', 'success');
+
+        // Refresh reviews
+        const data = await fetch(`/api/products/${selectedProductId}/reviews`).then(r => r.json());
+        renderReviews(data);
+
+        // Clear form
+        document.getElementById('review-comment').value = '';
+        document.getElementById('review-phone').value = '';
+        setRating(5);
+      } catch(e) {
+        showToast(e.message || 'Değerlendirme gönderilemedi', 'error');
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Değerlendirmeyi Gönder';
+    }
+
+    function renderReviews(data) {
+      const list = document.getElementById('reviews-list');
+      if (!data || !data.reviews || data.reviews.length === 0) {
+        list.innerHTML = '<div class="no-reviews">Henüz yorum yapılmamış. İlk yorumu siz yapın! 🎉</div>';
+        return;
+      }
+
+      list.innerHTML = `
+        <div class="reviews-title">💬 Yorumlar (${data.stats.count}) — ⭐ ${data.stats.avg_rating}/5</div>
+        ${data.reviews.map(r => `
+          <div class="review-item">
+            <div class="review-item-header">
+              <span class="review-item-name">👤 ${r.customer_name}</span>
+              <span class="review-item-date">${new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
+            </div>
+            <div class="review-item-stars">${starsHTML(r.rating)}</div>
+            ${r.comment ? `<div class="review-item-comment">${r.comment}</div>` : ''}
+          </div>
+        `).join('')}
+      `;
+    }
+
+    // ── Toast ──────────────────────────────────────
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+  </script>
+</body>
+</html>
