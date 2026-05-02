@@ -17,6 +17,21 @@
           <div class="sidebar-logo-text">Webyaz <span>Restaurant</span></div>
         </div>
       </div>
+      <!-- Quick Access - En çok kullanılanlar -->
+      <div class="sidebar-quick-actions">
+        <a href="/kitchen" class="quick-action-btn kitchen" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Mutfak
+        </a>
+        <a href="/cashier" class="quick-action-btn cashier" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Kasa
+        </a>
+        <a href="/order/1" class="quick-action-btn order" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+          Sipariş Al
+        </a>
+      </div>
       <nav class="sidebar-nav">
         <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -79,24 +94,9 @@
           Ayarlar
         </button>
       </nav>
-      <div class="sidebar-footer">
-        <div class="nav-links">
-          <a href="/kitchen" class="nav-link" target="_blank">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-            Mutfak Ekranı
-          </a>
-          <a href="/cashier" class="nav-link" target="_blank">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            Kasa Ekranı
-          </a>
-          <a href="/order/1" class="nav-link" target="_blank">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-            Sipariş Ekranı
-          </a>
-        </div>
-      </div>
     </aside>
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 
     <!-- Main -->
     <main class="main-content">
