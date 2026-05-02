@@ -36,8 +36,8 @@ function switchTab(tab) {
   document.getElementById('panel-' + tab).classList.add('active');
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
   // Close sidebar on mobile after tab switch
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
   if (sidebar) sidebar.classList.remove('open');
   if (overlay) overlay.classList.remove('active');
   
@@ -62,8 +62,8 @@ function switchTab(tab) {
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  const overlay = document.getElementById('sidebar-overlay');
+  document.querySelector('.sidebar').classList.toggle('open');
+  const overlay = document.querySelector('.sidebar-overlay');
   if (overlay) overlay.classList.toggle('active');
 }
 
