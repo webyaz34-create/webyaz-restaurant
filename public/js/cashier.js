@@ -62,7 +62,7 @@ function renderTables() {
               <div class="cashier-table-amount">₺${(t.active_total || 0).toLocaleString('tr-TR')}</div>
               <div class="cashier-table-info">${t.active_orders} sipariş</div>
               <div class="cashier-table-btns">
-                <button class="cashier-table-pay-btn" onclick="event.stopPropagation(); quickPay(${t.id})">💰 Hesap Al</button>
+                <button class="cashier-table-pay-btn" onclick="event.stopPropagation(); quickPay(${t.id})">💰 Masa Kapat</button>
               </div>
             ` : `
               <div class="cashier-table-info" style="margin-top:4px">${t.capacity} kişilik</div>
