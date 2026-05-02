@@ -71,8 +71,20 @@
 .detail-customer { display: block !important; line-height: 1.6; }
 
 @media (max-width: 768px) {
+  .cashier-header { flex-direction: column; gap: 12px; padding: 12px 16px; }
+  .cashier-header-left { flex-wrap: wrap; gap: 8px; width: 100%; }
+  .cashier-title { font-size: 1rem; }
+  .cashier-summary { width: 100%; justify-content: space-between; gap: 8px; }
+  .cashier-summary-value { font-size: 1rem; }
+  .cashier-summary-label { font-size: 0.65rem; }
   .cashier-layout { grid-template-columns: 1fr; }
-  .cashier-detail { border-left: none; border-top: 1px solid var(--border-primary); }
-  .cashier-summary { gap: 12px; }
-  .tables-grid { grid-template-columns: repeat(3, 1fr); }
+  .cashier-tables { padding: 12px; }
+  .cashier-detail { border-left: none; border-top: 2px solid var(--primary); min-height: 50vh; }
+  .tables-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .cashier-table-card { padding: 12px 8px; }
+  .cashier-table-name { font-size: 0.88rem; }
+  .detail-table-name { font-size: 1.1rem; }
+  .detail-payment-btns { flex-direction: column; }
+  .detail-payment-btns .btn { padding: 16px; font-size: 1rem; }
+  .detail-footer { position: sticky; bottom: 0; z-index: 10; }
 }

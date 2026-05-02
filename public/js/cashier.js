@@ -119,6 +119,12 @@ async function selectDeliveryOrder(orderId) {
     const order = await fetch(`/api/orders/${orderId}`).then(r => r.json());
     selectedTableOrders = [order];
     renderDeliveryDetail(order);
+    // Mobile: scroll to detail panel
+    if (window.innerWidth <= 768) {
+      setTimeout(() => {
+        document.getElementById('cashier-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   } catch (e) {
     showToast('Sipariş bilgileri yüklenemedi', 'error');
   }
@@ -170,11 +176,18 @@ function renderDeliveryDetail(order) {
 // ── Select Table ─────────────────────────────────────────────
 async function selectTable(tableId) {
   selectedTableId = tableId;
+  selectedDeliveryOrder = null;
   renderTables();
   
   try {
     selectedTableOrders = await fetch(`/api/tables/${tableId}/orders`).then(r => r.json());
     renderDetail();
+    // Mobile: scroll to detail panel
+    if (window.innerWidth <= 768) {
+      setTimeout(() => {
+        document.getElementById('cashier-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   } catch (e) {
     showToast('Sipariş bilgileri yüklenemedi', 'error');
   }
