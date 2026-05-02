@@ -104,6 +104,9 @@ function renderDeliverySection(container) {
               <div class="cashier-table-amount">₺${o.total_amount.toLocaleString('tr-TR')}</div>
               <div class="cashier-table-info">${isDelivery ? 'Adrese Teslim' : 'Gel-Al'}</div>
               <div class="cashier-table-info" style="font-size:0.7rem;margin-top:2px">${o.customer_name}</div>
+              <div class="cashier-table-btns">
+                <button class="cashier-table-pay-btn" onclick="event.stopPropagation(); quickPayDelivery(${o.id})">💰 Kapat</button>
+              </div>
             </div>
           `;
         }).join('')}
@@ -320,7 +323,9 @@ async function quickPayOrder(method) {
     showToast(`✅ ${method === 'cash' ? 'Nakit' : 'Kart'} ödeme alındı! Masa kapatıldı.`, 'success');
     selectedTableOrders = [];
     selectedTableId = null;
+    selectedDeliveryOrder = null;
     await loadTables();
+    await loadDeliveryOrders();
     await loadSummary();
     // Reset detail panel
     document.getElementById('detail-content').style.display = 'none';
@@ -332,6 +337,33 @@ async function quickPayOrder(method) {
     `;
   } catch (e) {
     showToast('Ödeme işlemi başarısız', 'error');
+  }
+}
+
+// ── Quick Pay Delivery (from delivery card) ─────────────────
+async function quickPayDelivery(orderId) {
+  try {
+    const order = await fetch(`/api/orders/${orderId}`).then(r => r.json());
+    if (!order || order.status === 'paid') return showToast('Bu sipariş zaten ödenmiş', 'error');
+    
+    selectedTableOrders = [order];
+    selectedDeliveryOrder = orderId;
+    selectedTableId = null;
+    
+    const isDelivery = order.order_type === 'delivery';
+    const total = order.total_amount;
+    
+    document.getElementById('qp-title').textContent = (isDelivery ? '📦 Paket' : '🥡 Gel-Al') + ' #' + order.id + ' — ' + order.customer_name;
+    document.getElementById('qp-items').innerHTML = (order.items || []).map(i => `
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-primary);font-size:0.88rem">
+        <span>${i.quantity}× ${i.product_name}</span>
+        <strong>₺${i.total_price.toLocaleString('tr-TR')}</strong>
+      </div>
+    `).join('');
+    document.getElementById('qp-total').textContent = '₺' + total.toLocaleString('tr-TR');
+    document.getElementById('quick-pay-modal').classList.add('active');
+  } catch (e) {
+    showToast('Sipariş bilgileri yüklenemedi', 'error');
   }
 }
 
