@@ -35,6 +35,11 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('panel-' + tab).classList.add('active');
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  // Close sidebar on mobile after tab switch
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
   
   const titles = { dashboard: 'Gösterge Paneli', categories: 'Kategoriler', products: 'Ürünler', tables: 'Masalar', qrcodes: 'QR Kod Menüleri', reviews: 'Yorum Yönetimi', orders: 'Siparişler', reports: 'Raporlar', staff: 'Personel Yönetimi', accounts: 'Cari Hesaplar', inventory: 'Stok Yönetimi', reservations: 'Rezervasyonlar', expenses: 'Gider Yönetimi', users: 'Kullanıcılar', settings: 'Ayarlar' };
   document.getElementById('topbar-title').textContent = titles[tab] || tab;
@@ -58,6 +63,8 @@ function switchTab(tab) {
 
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (overlay) overlay.classList.toggle('active');
 }
 
 // ── API Helper ───────────────────────────────────────────────

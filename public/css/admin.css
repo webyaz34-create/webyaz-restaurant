@@ -77,10 +77,14 @@
 .tab-panel { display: none; animation: fadeIn 0.3s ease-out; }
 .tab-panel.active { display: block; }
 
+/* Sidebar Overlay (mobile) */
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.active { display: block; }
   .main-content { margin-left: 0; }
   .menu-toggle { display: block; }
   .content-area { padding: 16px; }
