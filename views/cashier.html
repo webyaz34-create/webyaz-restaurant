@@ -118,6 +118,30 @@
     </div>
   </div>
 
+  <!-- Quick Pay Modal -->
+  <div class="modal-overlay" id="quick-pay-modal">
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header">
+        <h3 id="qp-title">Masa — Hesap</h3>
+        <button class="cart-close" onclick="closeQuickPayModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="qp-items"></div>
+        <div style="display:flex;justify-content:space-between;padding:14px 0 0;font-size:1.2rem;font-weight:800;border-top:2px solid var(--border-primary);margin-top:8px">
+          <span>TOPLAM</span>
+          <span id="qp-total" style="color:var(--primary)">₺0</span>
+        </div>
+      </div>
+      <div class="modal-footer" style="flex-direction:column;gap:8px">
+        <div style="display:flex;gap:8px;width:100%">
+          <button class="btn btn-success" style="flex:1;padding:16px;font-size:1rem" onclick="quickPayOrder('cash')">💵 Nakit</button>
+          <button class="btn btn-primary" style="flex:1;padding:16px;font-size:1rem" onclick="quickPayOrder('card')">💳 Kredi Kartı</button>
+        </div>
+        <button class="btn btn-secondary" style="width:100%;padding:12px" onclick="closeQuickPayModal()">İptal</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <script src="/socket.io/socket.io.js"></script>

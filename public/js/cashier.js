@@ -61,6 +61,9 @@ function renderTables() {
             ${t.active_orders > 0 ? `
               <div class="cashier-table-amount">₺${(t.active_total || 0).toLocaleString('tr-TR')}</div>
               <div class="cashier-table-info">${t.active_orders} sipariş</div>
+              <div class="cashier-table-btns">
+                <button class="cashier-table-pay-btn" onclick="event.stopPropagation(); quickPay(${t.id})">💰 Hesap Al</button>
+              </div>
             ` : `
               <div class="cashier-table-info" style="margin-top:4px">${t.capacity} kişilik</div>
             `}
@@ -257,6 +260,79 @@ function renderDetail() {
 function statusText(s) {
   const map = { pending: 'Beklemede', preparing: 'Hazırlanıyor', ready: 'Hazır', delivered: 'Teslim', paid: 'Ödendi', cancelled: 'İptal' };
   return map[s] || s;
+}
+
+// ── Quick Pay (from table card) ─────────────────────────────
+async function quickPay(tableId) {
+  try {
+    const orders = await fetch(`/api/tables/${tableId}/orders`).then(r => r.json());
+    if (orders.length === 0) return showToast('Bu masada aktif sipariş yok', 'error');
+    
+    selectedTableId = tableId;
+    selectedTableOrders = orders;
+    
+    const table = tables.find(t => t.id === tableId);
+    const tableName = table ? table.name : 'Masa ' + tableId;
+    const total = orders.reduce((sum, o) => sum + o.total_amount, 0);
+    
+    // Build items list
+    const allItems = [];
+    orders.forEach(o => {
+      (o.items || []).forEach(item => {
+        const existing = allItems.find(x => x.product_name === item.product_name && x.unit_price === item.unit_price);
+        if (existing) { existing.quantity += item.quantity; existing.total = existing.quantity * existing.unit_price; }
+        else allItems.push({ product_name: item.product_name, unit_price: item.unit_price, quantity: item.quantity, total: item.quantity * item.unit_price });
+      });
+    });
+    
+    // Show quick pay modal
+    document.getElementById('qp-title').textContent = tableName + ' — Hesap';
+    document.getElementById('qp-items').innerHTML = allItems.map(i => `
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-primary);font-size:0.88rem">
+        <span>${i.quantity}× ${i.product_name}</span>
+        <strong>₺${i.total.toLocaleString('tr-TR')}</strong>
+      </div>
+    `).join('');
+    document.getElementById('qp-total').textContent = '₺' + total.toLocaleString('tr-TR');
+    document.getElementById('quick-pay-modal').classList.add('active');
+  } catch (e) {
+    showToast('Sipariş bilgileri yüklenemedi', 'error');
+  }
+}
+
+function closeQuickPayModal() {
+  document.getElementById('quick-pay-modal').classList.remove('active');
+}
+
+async function quickPayOrder(method) {
+  if (selectedTableOrders.length === 0) return;
+  try {
+    for (const order of selectedTableOrders) {
+      if (order.status === 'paid') continue;
+      await fetch(`/api/orders/${order.id}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_method: method }),
+      });
+      socket.emit('order_paid', { order_id: order.id, payment_method: method });
+    }
+    closeQuickPayModal();
+    showToast(`✅ ${method === 'cash' ? 'Nakit' : 'Kart'} ödeme alındı! Masa kapatıldı.`, 'success');
+    selectedTableOrders = [];
+    selectedTableId = null;
+    await loadTables();
+    await loadSummary();
+    // Reset detail panel
+    document.getElementById('detail-content').style.display = 'none';
+    document.getElementById('detail-footer').style.display = 'none';
+    document.getElementById('detail-empty').style.display = 'flex';
+    document.getElementById('detail-empty').innerHTML = `
+      <div class="detail-empty-icon">✅</div>
+      <div>Ödeme başarıyla alındı</div>
+    `;
+  } catch (e) {
+    showToast('Ödeme işlemi başarısız', 'error');
+  }
 }
 
 // ── Payment ──────────────────────────────────────────────────

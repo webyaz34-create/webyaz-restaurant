@@ -31,6 +31,22 @@
 .cashier-table-amount { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
 .cashier-table-info { font-size: 0.72rem; color: var(--text-secondary); }
 
+/* Table card pay button */
+.cashier-table-btns { margin-top: 8px; }
+.cashier-table-pay-btn { width: 100%; padding: 8px; border: none; border-radius: 8px; background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.cashier-table-pay-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.cashier-table-pay-btn:active { transform: scale(0.97); }
+
+/* Modal overlay */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-overlay.active { display: flex; }
+.modal { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; width: 90%; max-height: 90vh; overflow-y: auto; }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-primary); display: flex; justify-content: space-between; align-items: center; }
+.modal-header h3 { font-size: 1rem; font-weight: 700; }
+.modal-body { padding: 20px 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-primary); display: flex; gap: 8px; }
+.cart-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+
 /* Right: Order Detail */
 .cashier-detail { background: var(--bg-secondary); border-left: 1px solid var(--border-primary); display: flex; flex-direction: column; }
 .detail-header { padding: 20px; border-bottom: 1px solid var(--border-primary); }
