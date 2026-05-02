@@ -246,8 +246,26 @@ function cartRemove(index) {
 function updateCartUI() {
   const items = document.getElementById('op-cart-items');
   const total = cart.reduce((s, i) => s + i.total_price, 0);
+  const totalQty = cart.reduce((s, i) => s + i.quantity, 0);
   document.getElementById('op-total').textContent = '₺' + total.toLocaleString('tr-TR');
   document.getElementById('op-save-btn').disabled = cart.length === 0;
+
+  // Update mobile cart count badge
+  const countBadge = document.getElementById('mobile-cart-count');
+  if (countBadge) {
+    if (totalQty > 0) {
+      countBadge.textContent = totalQty;
+      countBadge.style.display = 'flex';
+    } else {
+      countBadge.style.display = 'none';
+    }
+  }
+  // Update mobile cart button text
+  const cartBtn = document.getElementById('mobile-cart-btn');
+  if (cartBtn) {
+    const badge = cartBtn.querySelector('#mobile-cart-count');
+    cartBtn.childNodes[0].textContent = totalQty > 0 ? `🛒 Sepet (${totalQty}) ` : '🛒 Sepet ';
+  }
 
   if (cart.length === 0) {
     items.innerHTML = '<div class="op-cart-empty">🛒 Ürün seçin</div>';

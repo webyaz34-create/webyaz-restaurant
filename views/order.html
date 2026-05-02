@@ -119,12 +119,12 @@
     .pay-print { background:var(--bg-tertiary); color:var(--text-secondary); border:1px solid var(--border-primary); }
     .pay-cancel { background:var(--bg-tertiary); color:var(--text-muted); border:1px solid var(--border-primary); }
 
-    .toast-container { position:fixed; top:20px; right:20px; z-index:200; display:flex; flex-direction:column; gap:8px; }
-    .toast { padding:12px 20px; border-radius:10px; font-size:0.85rem; font-weight:600; animation:slideIn 0.3s; }
+    .toast-container { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:300; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; }
+    .toast { padding:12px 24px; border-radius:12px; font-size:0.85rem; font-weight:600; animation:toastSlideUp 0.3s; pointer-events:auto; box-shadow:0 4px 20px rgba(0,0,0,0.4); white-space:nowrap; }
     .toast-success { background:var(--green); color:#fff; }
     .toast-error { background:var(--red); color:#fff; }
-    .toast-exit { opacity:0; transition:0.3s; }
-    @keyframes slideIn { from { transform:translateX(100px); opacity:0; } }
+    .toast-exit { opacity:0; transform:translateY(10px); transition:0.3s; }
+    @keyframes toastSlideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
     .footer { text-align:center; padding:16px; color:var(--text-muted); font-size:0.72rem; }
     .footer a { color:var(--primary); text-decoration:none; }
 
@@ -167,7 +167,7 @@
         <h2>🪑 <span id="op-table-name">Masa</span> — Sipariş Al</h2>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="hbtn mobile-cart-toggle" onclick="toggleMobileCart()">🛒 Sepet</button>
+        <button class="hbtn mobile-cart-toggle" id="mobile-cart-btn" onclick="toggleMobileCart()" style="position:relative">🛒 Sepet <span id="mobile-cart-count" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;font-size:0.6rem;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center"></span></button>
       </div>
     </div>
     <div class="op-body">
